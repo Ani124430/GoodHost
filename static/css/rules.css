@@ -1,0 +1,151 @@
+:root {
+  --red:   #9B1C35;
+  --cream: #FBF3E4;
+  --green: #A8C256;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--cream);
+  color: var(--red);
+  font-family: Georgia, serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background-color: var(--red);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75em 2.5em;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.625em;
+}
+
+.logo span {
+  color: var(--cream);
+  font-size: 1rem;
+  font-weight: bold;
+  letter-spacing: 0.0625em;
+}
+
+nav {
+  display: flex;
+  align-items: center;
+  gap: 1.5em;
+}
+
+nav a {
+  color: var(--cream);
+  text-decoration: none;
+  font-size: 1rem;
+}
+
+nav a:hover {
+  color: var(--green);
+}
+
+nav a button {
+  background-color: var(--green);
+  color: var(--cream);
+  border: none;
+  padding: 0.5em 1.25em;
+  border-radius: 1.875em;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+nav a button:hover {
+  background-color: #8faa3e;
+}
+
+main {
+  flex: 1;
+  max-width: 56.25em;
+  width: 100%;
+  margin: 3.75em auto;
+  padding: 0 1.875em;
+}
+
+main h1 {
+  font-size: 2rem;
+  color: var(--red);
+  margin-bottom: 1em;
+}
+
+main > p {
+  font-size: 0.95rem;
+  color: var(--red);
+  line-height: 1.8;
+  margin-bottom: 1.25em;
+}
+
+main h2 {
+  font-size: 1.1rem;
+  color: var(--red);
+  margin: 1.875em 0 0.875em;
+  text-transform: uppercase;
+  letter-spacing: 0.0625em;
+  opacity: 0.7;
+  border-left: 0.25em solid var(--green);
+  padding-left: 0.875em;
+}
+
+main ol {
+  padding-left: 1.125em;
+  color: var(--red);
+  line-height: 2;
+  font-size: 0.95rem;
+  margin-bottom: 0.625em;
+}
+
+main ol li {
+  margin-bottom: 0.5rem;
+}
+
+main ol li strong {
+  color: var(--red);
+  display: block;
+  margin-bottom: 0;
+}
+
+main ol li br {
+  display: none;
+}
+
+footer {
+  background-color: var(--red);
+  color: var(--cream);
+  text-align: left;
+  padding: 1.25em 2.5em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  margin-top: auto;
+}
+
+footer a {
+  color: #ffb7c5;
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
+
+footer div {
+  display: flex;
+  justify-content: left;
+  gap: 1.25em;
+}

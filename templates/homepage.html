@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GoodHost</title>
+  <link rel="stylesheet" href="/static/css/homepage.css"/>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <img src="/static/iconpicture.png" alt="GoodHost лого" style="height:45px; width:auto;"/>
+      <span>GoodHost</span>
+    </div>
+    <nav>
+      <a href="/">Начало</a>
+      <a href="/registration">Регистрация</a>
+      <a href="/hosts">Домакини</a>
+      <a href="/rules">Правила</a>
+      {% if is_logged_in %}
+        <a href="/profile"><button>Профил</button></a>
+      {% else %}
+        <a href="/login"><button>Вход</button></a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main>
+
+    <div class="hero">
+      <div class="hero-content">
+        <p class="hero-tag">Платформа за доброволен туризъм</p>
+        <h1>Подай ръка,<br><span class="hero-highlight">опознай света!</span></h1>
+        <p class="hero-sub">GoodHost свързва доброволци и гостоприемници из България. Получаваш безплатен престой, като помагаш с ежедневни задачи.</p>
+        <a href="/registration" class="hero-btn">Започни сега</a>
+      </div>
+      <div class="hero-visual">
+        <img src="/static/snimkahome.jpg" alt="Пътешественик"/>
+      </div>
+    </div>
+
+    <section class="stats">
+      <div class="stat-item">
+        <strong>100%</strong>
+        <span>Безплатно престой</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <strong>България</strong>
+        <span>Цялата страна</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <strong>Реални</strong>
+        <span>Местни преживявания</span>
+      </div>
+    </section>
+
+    <section class="info">
+      <div class="info-block">
+<h2>Как работи?</h2>
+        <ol>
+          <li>Разгледай профилите на домакините</li>
+          <li>Свържи се директно по имейл или телефон</li>
+          <li>Уточнете дати и условия помежду си</li>
+          <li>Пристигни и се потопи в местния живот</li>
+        </ol>
+      </div>
+
+      <div class="info-block">
+<h2>За кого е платформата?</h2>
+        <ul>
+          <li><strong>Доброволци</strong> — търсещи приключения, нови култури и смислени преживявания</li>
+          <li><strong>Домакини</strong> — гостоприемни хора, готови да споделят дома си срещу малка помощ</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>© 2026 GoodHost. Всички права запазени.</p>
+    <p>Контакти: <a href="mailto:goodhost230@gmail.com">goodhost230@gmail.com</a></p>
+    <div>
+      <a href="https://www.facebook.com/profile.php?id=61576516620688" target="_blank">Facebook</a>
+      <a href="https://www.instagram.com/goodhost12/?hl=bg" target="_blank">Instagram</a>
+    </div>
+  </footer>
+
+</body>
+</html>
