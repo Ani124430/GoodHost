@@ -33,7 +33,7 @@ def send_email(to_email, subject, body_html):
         msg['From'] = f"GoodHost <{config.MAIL_USERNAME}>"
         msg['To'] = to_email
         msg.attach(MIMEText(body_html, 'html', 'utf-8'))
-        with smtplib.SMTP(config.MAIL_SERVER, config.MAIL_PORT) as server:
+        with smtplib.SMTP(config.MAIL_SERVER, config.MAIL_PORT, timeout=10) as server:
             server.ehlo()
             server.starttls()
             server.login(config.MAIL_USERNAME, config.MAIL_PASSWORD)
