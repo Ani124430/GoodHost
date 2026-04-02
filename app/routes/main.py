@@ -385,10 +385,10 @@ def forgot_password():
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
         db = get_db()
-        user = db.execute('SELECT *, "host" as utype FROM hosts WHERE email = ?', (email,)).fetchone()
+        user = db.execute('SELECT * FROM hosts WHERE email = ?', (email,)).fetchone()
         user_type = 'host'
         if not user:
-            user = db.execute('SELECT *, "volunteer" as utype FROM volunteers WHERE email = ?', (email,)).fetchone()
+            user = db.execute('SELECT * FROM volunteers WHERE email = ?', (email,)).fetchone()
             user_type = 'volunteer'
 
         if user:
