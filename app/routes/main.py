@@ -3,6 +3,7 @@ import os
 import secrets
 import time
 import smtplib
+import threading
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -27,20 +28,22 @@ def send_email(to_email, subject, body_html):
     if not config.MAIL_USERNAME or not config.MAIL_PASSWORD:
         print(f"[Email не е конфигуриран] До: {to_email} | Тема: {subject}")
         return
-    try:
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = subject
-        msg['From'] = f"GoodHost <{config.MAIL_USERNAME}>"
-        msg['To'] = to_email
-        msg.attach(MIMEText(body_html, 'html', 'utf-8'))
-        with smtplib.SMTP(config.MAIL_SERVER, config.MAIL_PORT, timeout=10) as server:
-            server.ehlo()
-            server.starttls()
-            server.login(config.MAIL_USERNAME, config.MAIL_PASSWORD)
-            server.sendmail(config.MAIL_USERNAME, to_email, msg.as_string())
-        print(f"[Email изпратен] До: {to_email} | Тема: {subject}")
-    except Exception as e:
-        print(f"[Email грешка] {e}")
+    def _send():
+        try:
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = subject
+            msg['From'] = f"GoodHost <{config.MAIL_USERNAME}>"
+            msg['To'] = to_email
+            msg.attach(MIMEText(body_html, 'html', 'utf-8'))
+            with smtplib.SMTP(config.MAIL_SERVER, config.MAIL_PORT, timeout=10) as server:
+                server.ehlo()
+                server.starttls()
+                server.login(config.MAIL_USERNAME, config.MAIL_PASSWORD)
+                server.sendmail(config.MAIL_USERNAME, to_email, msg.as_string())
+            print(f"[Email изпратен] До: {to_email} | Тема: {subject}")
+        except Exception as e:
+            print(f"[Email грешка] {e}")
+    threading.Thread(target=_send, daemon=True).start()
 
 
 def send_registration_email(to_email, name, user_type):
