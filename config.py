@@ -6,7 +6,7 @@ load_dotenv()
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'goodhost-secret-key-2026')
-DATABASE = os.path.join(BASE_DIR, 'database.db')
+DATABASE_URL = os.environ.get('DATABASE_URL', '')
 
 
 MAIL_SERVER = 'smtp.gmail.com'

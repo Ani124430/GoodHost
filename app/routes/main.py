@@ -221,7 +221,7 @@ def hostsregistration():
             db.commit()
         except Exception as e:
             db.close()
-            if 'UNIQUE' in str(e):
+            if 'unique' in str(e).lower():
                 flash('Този имейл вече е регистриран.', 'error')
             else:
                 flash('Грешка при регистрацията. Опитай отново.', 'error')
@@ -263,7 +263,7 @@ def volunteer_registration():
             db.commit()
         except Exception as e:
             db.close()
-            if 'UNIQUE' in str(e):
+            if 'unique' in str(e).lower():
                 flash('Този имейл вече е регистриран.', 'error')
             else:
                 flash('Грешка при регистрацията. Опитай отново.', 'error')
@@ -422,7 +422,10 @@ def reset_password(token):
         flash('Линкът е невалиден или вече е използван.', 'error')
         return redirect(url_for('main.forgot_password'))
 
-    if datetime.strptime(record['expires_at'], '%Y-%m-%d %H:%M:%S') < datetime.now():
+    expires_at = record['expires_at']
+    if isinstance(expires_at, str):
+        expires_at = datetime.strptime(expires_at, '%Y-%m-%d %H:%M:%S')
+    if expires_at < datetime.now():
         db.close()
         flash('Линкът е изтекъл. Поискай нов.', 'error')
         return redirect(url_for('main.forgot_password'))
