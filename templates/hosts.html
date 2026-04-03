@@ -60,10 +60,11 @@
       <div class="cards-grid">
         {% for host in hosts %}
           {% set photos = host['photos'] | from_json %}
+          {% set host_idx = loop.index %}
 
           <div class="host-card">
 
-            <div class="carousel" id="c{{ loop.index }}">
+            <div class="carousel" id="c{{ host_idx }}">
               {% if host['review_count'] >= 5 and host['avg_rating'] >= 4.5 %}
                 <div class="recommended-badge">⭐ Препоръчителен домакин</div>
               {% endif %}
@@ -73,12 +74,12 @@
                     class="carousel-img{% if not loop.first %} hidden{% endif %}"/>
                 {% endfor %}
                 {% if photos|length > 1 %}
-                  <button class="carousel-btn prev" onclick="moveCarousel('c{{ loop.index }}', -1)">&#8249;</button>
-                  <button class="carousel-btn next" onclick="moveCarousel('c{{ loop.index }}', 1)">&#8250;</button>
-                  <div class="carousel-dots" id="dots{{ loop.index }}">
+                  <button class="carousel-btn prev" onclick="moveCarousel('c{{ host_idx }}', -1)">&#8249;</button>
+                  <button class="carousel-btn next" onclick="moveCarousel('c{{ host_idx }}', 1)">&#8250;</button>
+                  <div class="carousel-dots" id="dots{{ host_idx }}">
                     {% for photo in photos %}
                       <span class="dot{% if loop.first %} active{% endif %}"
-                            onclick="goToSlide('c{{ loop.index }}', {{ loop.index0 }})"></span>
+                            onclick="goToSlide('c{{ host_idx }}', {{ loop.index0 }})"></span>
                     {% endfor %}
                   </div>
                 {% endif %}
