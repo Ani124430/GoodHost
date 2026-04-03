@@ -38,7 +38,7 @@ def send_email(to_email, subject, body_html):
             import resend
             resend.api_key = config.RESEND_API_KEY
             resend.Emails.send({
-                "from": "GoodHost <onboarding@resend.dev>",
+                "from": "GoodHost <noreply@goodhost.website>",
                 "to": to_email,
                 "subject": subject,
                 "html": body_html,
