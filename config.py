@@ -18,3 +18,5 @@ MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
 STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
+
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')

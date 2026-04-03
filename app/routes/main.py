@@ -2,11 +2,8 @@ import json
 import os
 import secrets
 import time
-import smtplib
 import threading
 from datetime import datetime, timedelta
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -25,21 +22,19 @@ def allowed_file(filename):
 
 
 def send_email(to_email, subject, body_html):
-    if not config.MAIL_USERNAME or not config.MAIL_PASSWORD:
+    if not config.RESEND_API_KEY:
         print(f"[Email не е конфигуриран] До: {to_email} | Тема: {subject}")
         return
     def _send():
         try:
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = f"GoodHost <{config.MAIL_USERNAME}>"
-            msg['To'] = to_email
-            msg.attach(MIMEText(body_html, 'html', 'utf-8'))
-            with smtplib.SMTP(config.MAIL_SERVER, config.MAIL_PORT, timeout=10) as server:
-                server.ehlo()
-                server.starttls()
-                server.login(config.MAIL_USERNAME, config.MAIL_PASSWORD)
-                server.sendmail(config.MAIL_USERNAME, to_email, msg.as_string())
+            import resend
+            resend.api_key = config.RESEND_API_KEY
+            resend.Emails.send({
+                "from": "GoodHost <onboarding@resend.dev>",
+                "to": to_email,
+                "subject": subject,
+                "html": body_html,
+            })
             print(f"[Email изпратен] До: {to_email} | Тема: {subject}")
         except Exception as e:
             print(f"[Email грешка] {e}")
