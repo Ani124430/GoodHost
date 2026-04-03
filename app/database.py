@@ -106,5 +106,19 @@ def init_db():
         )
     ''')
 
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS host_reviews (
+            id SERIAL PRIMARY KEY,
+            volunteer_id INTEGER NOT NULL,
+            host_id INTEGER NOT NULL,
+            rating INTEGER,
+            comment TEXT,
+            review_token TEXT UNIQUE NOT NULL,
+            token_used INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(volunteer_id, host_id)
+        )
+    ''')
+
     conn.commit()
     conn.close()

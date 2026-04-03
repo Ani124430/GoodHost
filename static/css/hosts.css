@@ -272,6 +272,80 @@ form[action="/hosts"] button[type="submit"]:hover { background-color: #7a1228; }
 .card-extra a { color: var(--red); text-decoration: none; }
 .card-extra a:hover { color: var(--green); }
 
+.recommended-badge {
+  position: absolute;
+  top: 0.6em;
+  left: 0.6em;
+  background: #c8a415;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: bold;
+  padding: 0.3em 0.7em;
+  border-radius: 1em;
+  z-index: 10;
+  font-family: Georgia, serif;
+  letter-spacing: 0.02em;
+  box-shadow: 0 0.125em 0.5em rgba(0,0,0,0.25);
+  pointer-events: none;
+}
+
+.star-rating {
+  color: #c8a415;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  margin-top: 0.1em;
+}
+
+.star-count {
+  color: var(--red);
+  opacity: 0.55;
+  font-size: 0.78rem;
+  margin-left: 0.2em;
+  letter-spacing: 0;
+}
+
+.visit-btn {
+  margin-top: 0.25em;
+  background-color: var(--green);
+  border: none;
+  color: #fff;
+  border-radius: 1.875em;
+  padding: 0.4em 1em;
+  font-size: 0.85rem;
+  font-family: Georgia, serif;
+  cursor: pointer;
+  font-weight: bold;
+  align-self: flex-start;
+  transition: background-color 0.2s;
+}
+.visit-btn:hover { background-color: #8faa3e; }
+
+.visited-label {
+  font-size: 0.8rem;
+  color: var(--green);
+  font-style: italic;
+  margin-top: 0.2em;
+  display: inline-block;
+}
+
+.flash-messages {
+  margin-bottom: 1.5em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.flash {
+  padding: 0.75em 1.25em;
+  border-radius: 0.5em;
+  font-size: 0.95rem;
+  font-family: Georgia, serif;
+}
+
+.flash-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.flash-error   { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.flash-info    { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
 .delete-btn {
   margin-top: 0.25em;
   background-color: var(--red);

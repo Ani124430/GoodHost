@@ -107,6 +107,41 @@ def send_login_email(to_email, name):
     send_email(to_email, "Нов вход в профила ти – GoodHost 🔐", body)
 
 
+def send_review_invitation_email(to_email, volunteer_name, host_name, review_link):
+    body = f"""
+    <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;background:#f9f9f9;border-radius:10px;overflow:hidden;">
+      <div style="background:#9B1C35;padding:30px;text-align:center;">
+        <h1 style="color:#FBF3E4;margin:0;font-size:28px;">GoodHost</h1>
+      </div>
+      <div style="padding:30px;background:#fff;">
+        <h2 style="color:#9B1C35;">Оцени домакина си ⭐</h2>
+        <p style="font-size:16px;color:#333;">Здравей, <strong>{volunteer_name}</strong>!</p>
+        <p style="font-size:15px;color:#555;">
+          Маркирал си посещение при <strong>{host_name}</strong>.
+          Ще ни помогнеш много ако споделиш как е минало!
+        </p>
+        <p style="font-size:15px;color:#555;">
+          Кликни по-долу за да оцениш домакина от 1 до 5 звезди и да напишеш коментар за изкарването си.
+        </p>
+        <div style="text-align:center;margin:30px 0;">
+          <a href="{review_link}"
+             style="display:inline-block;padding:14px 32px;background:#A8C256;color:#fff;
+                    text-decoration:none;border-radius:6px;font-size:16px;font-weight:bold;">
+            Оцени домакина
+          </a>
+        </div>
+        <p style="font-size:12px;color:#aaa;word-break:break-all;">
+          Или копирай линка: {review_link}
+        </p>
+      </div>
+      <div style="background:#f0f0f0;padding:15px;text-align:center;">
+        <p style="font-size:13px;color:#777;margin:0;">© 2026 GoodHost. Всички права запазени.</p>
+      </div>
+    </div>
+    """
+    send_email(to_email, f"Оцени домакина {host_name} – GoodHost ⭐", body)
+
+
 def send_forgot_password_email(to_email, name, reset_link):
     body = f"""
     <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;background:#f9f9f9;border-radius:10px;overflow:hidden;">
@@ -278,15 +313,119 @@ def volunteer_registration():
 def hosts():
     search = request.args.get('search', '').strip()
     db = get_db()
+
+    rating_join = '''
+        SELECT h.*,
+            COALESCE(AVG(r.rating), 0) as avg_rating,
+            COUNT(r.id) as review_count
+        FROM hosts h
+        LEFT JOIN host_reviews r ON r.host_id = h.id AND r.token_used = 1 AND r.rating IS NOT NULL
+    '''
     if search:
         hosts_list = db.execute(
-            'SELECT * FROM hosts WHERE name LIKE ? OR location LIKE ? ORDER BY created_at DESC',
+            rating_join + ' WHERE h.name LIKE ? OR h.location LIKE ? GROUP BY h.id ORDER BY h.created_at DESC',
             (f'%{search}%', f'%{search}%')
         ).fetchall()
     else:
-        hosts_list = db.execute('SELECT * FROM hosts ORDER BY created_at DESC').fetchall()
+        hosts_list = db.execute(
+            rating_join + ' GROUP BY h.id ORDER BY h.created_at DESC'
+        ).fetchall()
+
+    visited_host_ids = set()
+    if session.get('user_type') == 'volunteer':
+        rows = db.execute(
+            'SELECT host_id FROM host_reviews WHERE volunteer_id = ?',
+            (session['user_id'],)
+        ).fetchall()
+        visited_host_ids = {row['host_id'] for row in rows}
+
     db.close()
-    return render_template('hosts.html', hosts=hosts_list, search=search)
+    return render_template('hosts.html', hosts=hosts_list, search=search, visited_host_ids=visited_host_ids)
+
+
+@main_bp.route('/hosts/<int:host_id>/visited', methods=['POST'])
+def mark_visited(host_id):
+    if 'user_id' not in session or session.get('user_type') != 'volunteer':
+        flash('Трябва да влезеш като доброволец.', 'error')
+        return redirect(url_for('main.login'))
+
+    volunteer_id = session['user_id']
+    db = get_db()
+
+    existing = db.execute(
+        'SELECT id FROM host_reviews WHERE volunteer_id = ? AND host_id = ?',
+        (volunteer_id, host_id)
+    ).fetchone()
+    if existing:
+        db.close()
+        flash('Вече си маркирал посещение при този домакин.', 'info')
+        return redirect(url_for('main.hosts'))
+
+    host = db.execute('SELECT name FROM hosts WHERE id = ?', (host_id,)).fetchone()
+    if not host:
+        db.close()
+        flash('Домакинът не е намерен.', 'error')
+        return redirect(url_for('main.hosts'))
+
+    volunteer = db.execute('SELECT email FROM volunteers WHERE id = ?', (volunteer_id,)).fetchone()
+
+    token = secrets.token_urlsafe(32)
+    db.execute(
+        'INSERT INTO host_reviews (volunteer_id, host_id, review_token) VALUES (?, ?, ?)',
+        (volunteer_id, host_id, token)
+    )
+    db.commit()
+    db.close()
+
+    review_link = url_for('main.review_host', token=token, _external=True)
+    send_review_invitation_email(volunteer['email'], session['user_name'], host['name'], review_link)
+
+    flash(f'Изпратихме ти имейл с линк за оценка на {host["name"]}!', 'success')
+    return redirect(url_for('main.hosts'))
+
+
+@main_bp.route('/review/<token>', methods=['GET', 'POST'])
+def review_host(token):
+    db = get_db()
+    review = db.execute(
+        '''SELECT r.*, h.name as host_name, v.name as volunteer_name
+           FROM host_reviews r
+           JOIN hosts h ON h.id = r.host_id
+           JOIN volunteers v ON v.id = r.volunteer_id
+           WHERE r.review_token = ?''',
+        (token,)
+    ).fetchone()
+
+    if not review:
+        db.close()
+        flash('Линкът е невалиден.', 'error')
+        return redirect(url_for('main.hosts'))
+
+    if review['token_used']:
+        db.close()
+        flash('Тази оценка вече е подадена.', 'info')
+        return redirect(url_for('main.hosts'))
+
+    if request.method == 'POST':
+        rating = request.form.get('rating', '')
+        comment = request.form.get('comment', '').strip()
+
+        if not rating.isdigit() or not (1 <= int(rating) <= 5):
+            db.close()
+            flash('Моля избери оценка от 1 до 5 звезди.', 'error')
+            return render_template('review.html', review=review, token=token)
+
+        db.execute(
+            'UPDATE host_reviews SET rating = ?, comment = ?, token_used = 1 WHERE review_token = ?',
+            (int(rating), comment, token)
+        )
+        db.commit()
+        db.close()
+        flash(f'Благодарим ти за оценката на {review["host_name"]}! 🌟', 'success')
+        return redirect(url_for('main.hosts'))
+
+    db.close()
+    return render_template('review.html', review=review, token=token)
 
 
 @main_bp.route('/hosts/<int:host_id>/delete', methods=['POST'])
