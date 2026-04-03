@@ -106,14 +106,33 @@
 
       {% if current_user_type == 'host' %}
       {% set photos = user['photos'] | from_json %}
-      <div class="photos-box">
-        {% if photos %}
-          {% for photo in photos %}
-            <img src="/static/uploads/{{ photo }}" alt="Снимка" class="gallery-img"/>
-          {% endfor %}
-        {% else %}
-          <span class="photos-placeholder">Няма снимки</span>
-        {% endif %}
+      <div class="photos-section">
+        <div class="photos-header">
+          <span class="photos-title">Снимки <span class="photos-count">({{ photos|length }}/20)</span></span>
+          {% if photos|length < 20 %}
+          <form action="/hosts/{{ user['id'] }}/photos/add" method="POST" enctype="multipart/form-data" id="add-photos-form">
+            <input type="file" name="photos" accept="image/png,image/jpg,image/jpeg,image/gif,image/webp"
+                   multiple id="photo-file-input" style="display:none" onchange="this.form.submit()">
+            <button type="button" class="add-photos-btn"
+                    onclick="document.getElementById('photo-file-input').click()">+ Добави снимки</button>
+          </form>
+          {% endif %}
+        </div>
+        <div class="photos-box">
+          {% if photos %}
+            {% for photo in photos %}
+              <div class="gallery-item">
+                <img src="/static/uploads/{{ photo }}" alt="Снимка" class="gallery-img"/>
+                <form action="/hosts/{{ user['id'] }}/photos/delete" method="POST" class="delete-photo-form">
+                  <input type="hidden" name="filename" value="{{ photo }}">
+                  <button type="submit" class="delete-photo-btn" title="Изтрий снимката">×</button>
+                </form>
+              </div>
+            {% endfor %}
+          {% else %}
+            <span class="photos-placeholder">Няма снимки</span>
+          {% endif %}
+        </div>
       </div>
       {% endif %}
 
@@ -152,6 +171,11 @@
       img.addEventListener('click', function() {
         document.getElementById('lightbox-img').src = this.src;
         document.getElementById('lightbox').style.display = 'flex';
+      });
+    });
+    document.querySelectorAll('.delete-photo-form').forEach(function(form) {
+      form.addEventListener('submit', function(e) {
+        e.stopPropagation();
       });
     });
   </script>

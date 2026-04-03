@@ -428,6 +428,70 @@ def review_host(token):
     return render_template('review.html', review=review, token=token)
 
 
+@main_bp.route('/hosts/<int:host_id>/photos/add', methods=['POST'])
+def add_photos(host_id):
+    if 'user_id' not in session or session.get('user_type') != 'host' or session['user_id'] != host_id:
+        return redirect(url_for('main.profile'))
+
+    db = get_db()
+    host = db.execute('SELECT photos FROM hosts WHERE id = ?', (host_id,)).fetchone()
+    photos = json.loads(host['photos'] or '[]')
+
+    upload_folder = os.path.join(current_app.root_path, 'static', 'uploads')
+    os.makedirs(upload_folder, exist_ok=True)
+
+    added = 0
+    for f in request.files.getlist('photos'):
+        if len(photos) >= 20:
+            break
+        if f and f.filename and allowed_file(f.filename):
+            filename = f"{int(time.time())}_{secure_filename(f.filename)}"
+            f.save(os.path.join(upload_folder, filename))
+            photos.append(filename)
+            added += 1
+
+    db.execute('UPDATE hosts SET photos = ? WHERE id = ?', (json.dumps(photos), host_id))
+    db.commit()
+    db.close()
+
+    if added:
+        flash(f'Добавени {added} нови снимки.', 'success')
+    else:
+        flash('Не са добавени снимки. Провери формата или лимита от 20 снимки.', 'error')
+    return redirect(url_for('main.profile'))
+
+
+@main_bp.route('/hosts/<int:host_id>/photos/delete', methods=['POST'])
+def delete_photo(host_id):
+    if 'user_id' not in session or session.get('user_type') != 'host' or session['user_id'] != host_id:
+        return redirect(url_for('main.profile'))
+
+    filename = request.form.get('filename', '').strip()
+    if not filename or '/' in filename or '\\' in filename:
+        flash('Невалидно име на файл.', 'error')
+        return redirect(url_for('main.profile'))
+
+    db = get_db()
+    host = db.execute('SELECT photos FROM hosts WHERE id = ?', (host_id,)).fetchone()
+    photos = json.loads(host['photos'] or '[]')
+
+    if filename in photos:
+        photos.remove(filename)
+        db.execute('UPDATE hosts SET photos = ? WHERE id = ?', (json.dumps(photos), host_id))
+        db.commit()
+        file_path = os.path.join(current_app.root_path, 'static', 'uploads', filename)
+        try:
+            os.remove(file_path)
+        except OSError:
+            pass
+        flash('Снимката беше изтрита.', 'success')
+    else:
+        flash('Снимката не е намерена.', 'error')
+
+    db.close()
+    return redirect(url_for('main.profile'))
+
+
 @main_bp.route('/hosts/<int:host_id>/delete', methods=['POST'])
 def delete_host(host_id):
     if 'user_id' not in session or session.get('user_type') != 'host':
