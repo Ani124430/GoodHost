@@ -5,12 +5,20 @@ import time
 import threading
 from datetime import datetime, timedelta
 
+import cloudinary
+import cloudinary.uploader
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from app.database import get_db
 from app.verification import get_verification_status
 import config
+
+cloudinary.config(
+    cloud_name=config.CLOUDINARY_CLOUD_NAME,
+    api_key=config.CLOUDINARY_API_KEY,
+    api_secret=config.CLOUDINARY_API_SECRET,
+)
 
 main_bp = Blueprint('main', __name__)
 
@@ -230,16 +238,12 @@ def hostsregistration():
         location      = f"{city}, {region}" if region else city
         password_hash = generate_password_hash(password, method='pbkdf2:sha256')
 
-        upload_folder = os.path.join(current_app.root_path, 'static', 'uploads')
-        os.makedirs(upload_folder, exist_ok=True)
-
         photos = []
         if 'photos' in request.files:
             for f in request.files.getlist('photos')[:20]:
                 if f and f.filename and allowed_file(f.filename):
-                    filename = f"{int(time.time())}_{secure_filename(f.filename)}"
-                    f.save(os.path.join(upload_folder, filename))
-                    photos.append(filename)
+                    result = cloudinary.uploader.upload(f, folder='goodhost')
+                    photos.append(result['secure_url'])
 
         max_guests = int(request.form.get('max_guests', 1) or 1)
 
@@ -437,17 +441,13 @@ def add_photos(host_id):
     host = db.execute('SELECT photos FROM hosts WHERE id = ?', (host_id,)).fetchone()
     photos = json.loads(host['photos'] or '[]')
 
-    upload_folder = os.path.join(current_app.root_path, 'static', 'uploads')
-    os.makedirs(upload_folder, exist_ok=True)
-
     added = 0
     for f in request.files.getlist('photos'):
         if len(photos) >= 20:
             break
         if f and f.filename and allowed_file(f.filename):
-            filename = f"{int(time.time())}_{secure_filename(f.filename)}"
-            f.save(os.path.join(upload_folder, filename))
-            photos.append(filename)
+            result = cloudinary.uploader.upload(f, folder='goodhost')
+            photos.append(result['secure_url'])
             added += 1
 
     db.execute('UPDATE hosts SET photos = ? WHERE id = ?', (json.dumps(photos), host_id))
@@ -466,23 +466,25 @@ def delete_photo(host_id):
     if 'user_id' not in session or session.get('user_type') != 'host' or session['user_id'] != host_id:
         return redirect(url_for('main.profile'))
 
-    filename = request.form.get('filename', '').strip()
-    if not filename or '/' in filename or '\\' in filename:
-        flash('Невалидно име на файл.', 'error')
+    photo_url = request.form.get('filename', '').strip()
+    if not photo_url:
+        flash('Невалидна снимка.', 'error')
         return redirect(url_for('main.profile'))
 
     db = get_db()
     host = db.execute('SELECT photos FROM hosts WHERE id = ?', (host_id,)).fetchone()
     photos = json.loads(host['photos'] or '[]')
 
-    if filename in photos:
-        photos.remove(filename)
+    if photo_url in photos:
+        photos.remove(photo_url)
         db.execute('UPDATE hosts SET photos = ? WHERE id = ?', (json.dumps(photos), host_id))
         db.commit()
-        file_path = os.path.join(current_app.root_path, 'static', 'uploads', filename)
+        # Изтриване от Cloudinary по public_id
         try:
-            os.remove(file_path)
-        except OSError:
+            # URL формат: .../goodhost/PUBLIC_ID.ext
+            public_id = 'goodhost/' + photo_url.split('/')[-1].rsplit('.', 1)[0]
+            cloudinary.uploader.destroy(public_id)
+        except Exception:
             pass
         flash('Снимката беше изтрита.', 'success')
     else:

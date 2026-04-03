@@ -70,7 +70,7 @@
               {% endif %}
               {% if photos %}
                 {% for photo in photos %}
-                  <img src="/static/uploads/{{ photo }}" alt="{{ host['name'] }}"
+                  <img src="{{ photo }}" alt="{{ host['name'] }}"
                     class="carousel-img{% if not loop.first %} hidden{% endif %}"/>
                 {% endfor %}
                 {% if photos|length > 1 %}

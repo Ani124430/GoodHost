@@ -122,7 +122,7 @@
           {% if photos %}
             {% for photo in photos %}
               <div class="gallery-item">
-                <img src="/static/uploads/{{ photo }}" alt="Снимка" class="gallery-img"/>
+                <img src="{{ photo }}" alt="Снимка" class="gallery-img"/>
                 <form action="/hosts/{{ user['id'] }}/photos/delete" method="POST" class="delete-photo-form">
                   <input type="hidden" name="filename" value="{{ photo }}">
                   <button type="submit" class="delete-photo-btn" title="Изтрий снимката">×</button>
