@@ -13,6 +13,7 @@
       <img src="/static/iconpicture.png" alt="GoodHost лого" style="height:45px; width:auto;"/>
       <span>GoodHost</span>
     </div>
+    <button class="nav-toggle" onclick="toggleNav()" aria-label="Меню">&#9776;</button>
     <nav>
       <a href="/">Начало</a>
       <a href="/registration">Регистрация</a>
@@ -53,7 +54,15 @@
             {% if current_user_type == 'host' %}
             <div class="bio-box">
               <span class="contact-label">За мен</span>
-              <span class="bio-text">{{ user['bio'] or '—' }}</span>
+              <span class="bio-text" id="bio-display">{{ user['bio'] or '—' }}</span>
+              <button type="button" class="edit-bio-btn" onclick="openBioEdit()">Редактирай</button>
+              <form id="bio-form" action="/hosts/{{ user['id'] }}/update-bio" method="POST" style="display:none;">
+                <textarea name="bio" id="bio-textarea" rows="4">{{ user['bio'] or '' }}</textarea>
+                <div class="bio-form-actions">
+                  <button type="submit" class="save-bio-btn">Запази</button>
+                  <button type="button" class="cancel-bio-btn" onclick="closeBioEdit()">Откажи</button>
+                </div>
+              </form>
             </div>
             {% endif %}
           </div>
@@ -160,6 +169,20 @@
   </div>
 
   <script src="/static/js/delete-modal.js"></script>
+  <script src="/static/js/nav.js"></script>
+  <script>
+    function openBioEdit() {
+      document.getElementById('bio-display').style.display = 'none';
+      document.querySelector('.edit-bio-btn').style.display = 'none';
+      document.getElementById('bio-form').style.display = 'block';
+      document.getElementById('bio-textarea').focus();
+    }
+    function closeBioEdit() {
+      document.getElementById('bio-display').style.display = '';
+      document.querySelector('.edit-bio-btn').style.display = '';
+      document.getElementById('bio-form').style.display = 'none';
+    }
+  </script>
 
 
   <div id="lightbox" class="lightbox-overlay" style="display:none;" onclick="this.style.display='none'">

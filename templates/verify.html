@@ -39,6 +39,7 @@
       <img src="/static/iconpicture.png" alt="GoodHost лого" style="height:45px; width:auto;"/>
       <span>GoodHost</span>
     </div>
+    <button class="nav-toggle" onclick="toggleNav()" aria-label="Меню">&#9776;</button>
     <nav>
       <a href="/">Начало</a>
       <a href="/registration">Регистрация</a>
@@ -102,8 +103,34 @@
           btn.textContent = 'Опитай отново';
         } else {
           statusMsg.style.color = '#2e7d32';
-          statusMsg.textContent = 'Верификацията е изпратена! Пренасочване...';
-          setTimeout(() => { window.location.href = redirectAfterVerify; }, 2000);
+          statusMsg.textContent = 'Верификацията се обработва...';
+
+          // Poll until Stripe marks the session as verified (max ~30s)
+          let attempts = 0;
+          const maxAttempts = 15;
+          const pollInterval = setInterval(async () => {
+            attempts++;
+            try {
+              const statusRes = await fetch(
+                `/verify/status?user_type=${userType}&user_id=${userId}`
+              );
+              const statusData = await statusRes.json();
+              if (statusData.verified) {
+                clearInterval(pollInterval);
+                statusMsg.textContent = 'Верификацията е успешна! Пренасочване...';
+                setTimeout(() => { window.location.href = redirectAfterVerify; }, 1000);
+              } else if (attempts >= maxAttempts) {
+                clearInterval(pollInterval);
+                statusMsg.textContent = 'Верификацията се обработва. Ще бъдеш пренасочен...';
+                setTimeout(() => { window.location.href = redirectAfterVerify; }, 1500);
+              }
+            } catch (e) {
+              if (attempts >= maxAttempts) {
+                clearInterval(pollInterval);
+                window.location.href = redirectAfterVerify;
+              }
+            }
+          }, 2000);
         }
 
       } catch (err) {
@@ -114,6 +141,7 @@
       }
     });
   </script>
+  <script src="/static/js/nav.js"></script>
 
 </body>
 </html>
