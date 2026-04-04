@@ -3,7 +3,7 @@ import os
 import secrets
 import time
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date as date_type
 
 import cloudinary
 import cloudinary.uploader
@@ -113,6 +113,30 @@ def send_login_email(to_email, name):
     </div>
     """
     send_email(to_email, "Нов вход в профила ти – GoodHost 🔐", body)
+
+
+def send_plan_visit_email(to_email, volunteer_name, host_name, display_date):
+    body = f"""
+    <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;background:#f9f9f9;border-radius:10px;overflow:hidden;">
+      <div style="background:#9B1C35;padding:30px;text-align:center;">
+        <h1 style="color:#FBF3E4;margin:0;font-size:28px;">GoodHost</h1>
+      </div>
+      <div style="padding:30px;background:#fff;">
+        <h2 style="color:#9B1C35;">Планирано посещение 📅</h2>
+        <p style="font-size:16px;color:#333;">Здравей, <strong>{volunteer_name}</strong>!</p>
+        <p style="font-size:15px;color:#555;">
+          Маркирал си планирано посещение при <strong>{host_name}</strong> на <strong>{display_date}</strong>.
+        </p>
+        <p style="font-size:15px;color:#555;">
+          След като ги посетиш, не забравяй да оставиш отзив — помага на другите доброволци да изберат добре!
+        </p>
+      </div>
+      <div style="background:#f0f0f0;padding:15px;text-align:center;">
+        <p style="font-size:13px;color:#777;margin:0;">© 2026 GoodHost. Всички права запазени.</p>
+      </div>
+    </div>
+    """
+    send_email(to_email, f"Планирано посещение при {host_name} на {display_date} – GoodHost 📅", body)
 
 
 def send_review_invitation_email(to_email, volunteer_name, host_name, review_link):
@@ -225,6 +249,7 @@ def hostsregistration():
         city             = request.form.get('city', '').strip()
         region           = request.form.get('region', '').strip()
         about            = request.form.get('about', '').strip()
+        help_needed      = request.form.get('help_needed', '').strip()
         password         = request.form.get('password', '')
         password_confirm = request.form.get('password_confirm', '')
 
@@ -250,9 +275,9 @@ def hostsregistration():
         db = get_db()
         try:
             cursor = db.execute(
-                '''INSERT INTO hosts (name, age, bio, email, phone, location, max_guests, password_hash, photos)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                (name, int(age), about, email, phone, location, max_guests, password_hash, json.dumps(photos))
+                '''INSERT INTO hosts (name, age, bio, email, phone, location, max_guests, password_hash, photos, help_needed)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                (name, int(age), about, email, phone, location, max_guests, password_hash, json.dumps(photos), help_needed or None)
             )
             host_id = cursor.lastrowid
             db.commit()
@@ -343,8 +368,31 @@ def hosts():
         ).fetchall()
         visited_host_ids = {row['host_id'] for row in rows}
 
+    today = datetime.now().date()
+    future_limit = today + timedelta(days=90)
+    busy_rows = db.execute(
+        'SELECT host_id, date FROM host_busy_days WHERE date >= ? AND date <= ?',
+        (str(today), str(future_limit))
+    ).fetchall()
+    busy_by_host = {}
+    for row in busy_rows:
+        busy_by_host.setdefault(row['host_id'], set()).add(str(row['date'])[:10])
+
+    next_available = {}
+    for host in hosts_list:
+        hid = host['id']
+        busy = busy_by_host.get(hid, set())
+        if not busy:
+            next_available[hid] = None
+        else:
+            d = today
+            while str(d) in busy and d <= future_limit:
+                d += timedelta(days=1)
+            next_available[hid] = None if d == today else d.strftime('%d.%m.%Y')
+
     db.close()
-    return render_template('hosts.html', hosts=hosts_list, search=search, visited_host_ids=visited_host_ids)
+    return render_template('hosts.html', hosts=hosts_list, search=search,
+                           visited_host_ids=visited_host_ids, next_available=next_available)
 
 
 @main_bp.route('/hosts/<int:host_id>/visited', methods=['POST'])
@@ -430,6 +478,100 @@ def review_host(token):
 
     db.close()
     return render_template('review.html', review=review, token=token)
+
+
+@main_bp.route('/hosts/<int:host_id>/reviews')
+def host_reviews_json(host_id):
+    from flask import jsonify
+    db = get_db()
+    rows = db.execute(
+        '''SELECT r.rating, r.comment, r.created_at, v.name as volunteer_name
+           FROM host_reviews r
+           JOIN volunteers v ON v.id = r.volunteer_id
+           WHERE r.host_id = ? AND r.token_used = 1 AND r.rating IS NOT NULL
+           ORDER BY r.created_at DESC''',
+        (host_id,)
+    ).fetchall()
+    db.close()
+    result = [
+        {
+            'rating': row['rating'],
+            'comment': row['comment'] or '',
+            'volunteer_name': row['volunteer_name'],
+            'created_at': str(row['created_at'])[:10],
+        }
+        for row in rows
+    ]
+    return jsonify(result)
+
+
+@main_bp.route('/hosts/<int:host_id>/busy-days')
+def get_busy_days(host_id):
+    from flask import jsonify
+    year  = request.args.get('year',  type=int, default=datetime.now().year)
+    month = request.args.get('month', type=int, default=datetime.now().month)
+    db = get_db()
+    rows = db.execute(
+        '''SELECT date FROM host_busy_days
+           WHERE host_id = ?
+             AND EXTRACT(YEAR  FROM date) = ?
+             AND EXTRACT(MONTH FROM date) = ?''',
+        (host_id, year, month)
+    ).fetchall()
+    db.close()
+    return jsonify({'busy_days': [str(r['date'])[:10] for r in rows]})
+
+
+@main_bp.route('/hosts/<int:host_id>/busy-days/toggle', methods=['POST'])
+def toggle_busy_day(host_id):
+    from flask import jsonify
+    if 'user_id' not in session or session.get('user_type') != 'host' or session['user_id'] != host_id:
+        return jsonify({'error': 'unauthorized'}), 403
+    date_str = request.form.get('date', '').strip()
+    try:
+        datetime.strptime(date_str, '%Y-%m-%d')
+    except ValueError:
+        return jsonify({'error': 'invalid date'}), 400
+    db = get_db()
+    existing = db.execute(
+        'SELECT id FROM host_busy_days WHERE host_id = ? AND date = ?',
+        (host_id, date_str)
+    ).fetchone()
+    if existing:
+        db.execute('DELETE FROM host_busy_days WHERE host_id = ? AND date = ?', (host_id, date_str))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'removed'})
+    else:
+        db.execute('INSERT INTO host_busy_days (host_id, date) VALUES (?, ?)', (host_id, date_str))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'added'})
+
+
+@main_bp.route('/hosts/<int:host_id>/plan-visit', methods=['POST'])
+def plan_visit(host_id):
+    if 'user_id' not in session or session.get('user_type') != 'volunteer':
+        flash('Трябва да влезеш като доброволец.', 'error')
+        return redirect(url_for('main.login'))
+    date_str = request.form.get('date', '').strip()
+    try:
+        visit_date = datetime.strptime(date_str, '%Y-%m-%d')
+    except ValueError:
+        flash('Невалидна дата.', 'error')
+        return redirect(url_for('main.hosts'))
+    volunteer_id = session['user_id']
+    db = get_db()
+    host = db.execute('SELECT name FROM hosts WHERE id = ?', (host_id,)).fetchone()
+    volunteer = db.execute('SELECT email, name FROM volunteers WHERE id = ?', (volunteer_id,)).fetchone()
+    db.close()
+    if not host or not volunteer:
+        flash('Не е намерен домакин.', 'error')
+        return redirect(url_for('main.hosts'))
+    display_date = visit_date.strftime('%d.%m.%Y')
+    send_plan_visit_email(volunteer['email'], volunteer['name'], host['name'], display_date)
+    flash(f'Запазено! Ще получиш имейл напомняне след посещението при {host["name"]} на {display_date}.', 'success')
+    return redirect(url_for('main.hosts'))
 
 
 @main_bp.route('/hosts/<int:host_id>/photos/add', methods=['POST'])

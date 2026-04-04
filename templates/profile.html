@@ -20,7 +20,13 @@
       <a href="/hosts">Домакини</a>
       <a href="/rules">Правила</a>
       {% if is_logged_in %}
-        <a href="/profile"><button>Профил</button></a>
+        <div class="user-menu">
+          <span class="user-menu-name">{{ current_user_name }}</span>
+          <div class="user-dropdown">
+            <a href="/profile">Моя профил</a>
+            <a href="/logout">Изход</a>
+          </div>
+        </div>
       {% else %}
         <a href="/login"><button>Вход</button></a>
       {% endif %}
@@ -114,6 +120,27 @@
 
 
       {% if current_user_type == 'host' %}
+      <div class="host-cal-section">
+        <div class="photos-header">
+          <span class="photos-title">Моят календар</span>
+        </div>
+        <p class="host-cal-note">Кликни на ден, за да го маркираш като зает (червено). Доброволците ще виждат кога си свободен.</p>
+        <div class="mini-cal">
+          <div class="mini-cal-nav">
+            <button onclick="hostCalChangeMonth(-1)">&#8249;</button>
+            <span id="host-cal-label"></span>
+            <button onclick="hostCalChangeMonth(1)">&#8250;</button>
+          </div>
+          <div class="cal-grid" id="host-cal-grid"></div>
+          <div class="cal-legend" style="margin-top:0.5em;">
+            <span><span class="cal-legend-dot" style="background:#f8d7da;border:1px solid #e0a0a0;"></span>Зает (кликни за премахване)</span>
+            <span><span class="cal-legend-dot" style="background:#fff;border:1px solid rgba(155,28,53,0.2);"></span>Свободен</span>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if current_user_type == 'host' %}
       {% set photos = user['photos'] | from_json %}
       <div class="photos-section">
         <div class="photos-header">
@@ -168,6 +195,7 @@
     </div>
   </div>
 
+  <script src="/static/js/calendar.js"></script>
   <script src="/static/js/delete-modal.js"></script>
   <script src="/static/js/nav.js"></script>
   <script>
@@ -177,6 +205,9 @@
       document.getElementById('bio-form').style.display = 'block';
       document.getElementById('bio-textarea').focus();
     }
+    {% if current_user_type == 'host' %}
+    initHostCal({{ user['id'] }});
+    {% endif %}
     function closeBioEdit() {
       document.getElementById('bio-display').style.display = '';
       document.querySelector('.edit-bio-btn').style.display = '';

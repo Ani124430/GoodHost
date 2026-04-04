@@ -20,7 +20,13 @@
       <a href="/hosts">Домакини</a>
       <a href="/rules">Правила</a>
       {% if is_logged_in %}
-        <a href="/profile"><button>Профил</button></a>
+        <div class="user-menu">
+          <span class="user-menu-name">{{ current_user_name }}</span>
+          <div class="user-dropdown">
+            <a href="/profile">Моя профил</a>
+            <a href="/logout">Изход</a>
+          </div>
+        </div>
       {% else %}
         <a href="/login"><button>Вход</button></a>
       {% endif %}

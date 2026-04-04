@@ -120,5 +120,16 @@ def init_db():
         )
     ''')
 
+    conn.execute("ALTER TABLE hosts ADD COLUMN IF NOT EXISTS help_needed TEXT")
+
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS host_busy_days (
+            id SERIAL PRIMARY KEY,
+            host_id INTEGER NOT NULL,
+            date DATE NOT NULL,
+            UNIQUE(host_id, date)
+        )
+    ''')
+
     conn.commit()
     conn.close()

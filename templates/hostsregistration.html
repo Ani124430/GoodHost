@@ -20,7 +20,13 @@
       <a href="/hosts">Домакини</a>
       <a href="/rules">Правила</a>
       {% if is_logged_in %}
-        <a href="/profile"><button>Профил</button></a>
+        <div class="user-menu">
+          <span class="user-menu-name">{{ current_user_name }}</span>
+          <div class="user-dropdown">
+            <a href="/profile">Моя профил</a>
+            <a href="/logout">Изход</a>
+          </div>
+        </div>
       {% else %}
         <a href="/login"><button>Вход</button></a>
       {% endif %}
@@ -79,6 +85,10 @@
         <label for="about">Кратка информация за себе си и семейството си <span style="color:red;">*</span></label><br/>
         <textarea id="about" name="about" required rows="6" cols="50"
           placeholder="Разкажете малко за себе си, семейството си, начина ви на живот..."></textarea><br/><br/>
+
+        <label for="help_needed">Търся помощ с:</label><br/>
+        <textarea id="help_needed" name="help_needed" rows="3" cols="50"
+          placeholder="Напр. почистване, градинарство, грижа за животни, пазаруване..."></textarea><br/><br/>
       </fieldset>
 
       <fieldset>

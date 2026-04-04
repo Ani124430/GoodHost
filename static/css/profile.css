@@ -332,6 +332,17 @@ main {
 
 .verify-btn:hover { background-color: #8faa3e; }
 
+.host-cal-section {
+  margin-bottom: 1.5em;
+}
+
+.host-cal-note {
+  font-size: 0.78rem;
+  color: var(--red);
+  opacity: 0.55;
+  margin-bottom: 0.6em;
+}
+
 .photos-section {
   display: flex;
   flex-direction: column;
