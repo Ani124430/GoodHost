@@ -42,7 +42,7 @@ def create_verification_session(user_type, user_id):
 def handle_webhook(payload, sig_header):
     """
     Обработва Stripe webhook събитие.
-    При успешна верификация update-ва id_verified = 1 в БД.
+    При успешна верификация update-ва id_verified = TRUE в БД.
     """
     stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', '')
     webhook_secret = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
@@ -62,7 +62,7 @@ def handle_webhook(payload, sig_header):
             table = 'hosts' if user_type == 'host' else 'volunteers'
             conn = get_db()
             conn.execute(
-                f'UPDATE {table} SET id_verified = 1 WHERE id = ?',
+                f'UPDATE {table} SET id_verified = TRUE WHERE id = ?',
                 (user_id,)
             )
             conn.commit()
@@ -109,12 +109,13 @@ def get_verification_status(user_type, user_id):
     session = stripe.identity.VerificationSession.retrieve(
         row['stripe_verification_id']
     )
+    print(f"[verify] session {row['stripe_verification_id']} status={session.status}")
 
     if session.status == 'verified':
         if not row['id_verified']:
             conn = get_db()
             conn.execute(
-                f'UPDATE {table} SET id_verified = 1 WHERE id = ?',
+                f'UPDATE {table} SET id_verified = TRUE WHERE id = ?',
                 (user_id,)
             )
             conn.commit()

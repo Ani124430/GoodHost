@@ -115,6 +115,7 @@
                 `/verify/status?user_type=${userType}&user_id=${userId}`
               );
               const statusData = await statusRes.json();
+              console.log(`[verify poll #${attempts}]`, statusData);
               if (statusData.verified) {
                 clearInterval(pollInterval);
                 statusMsg.textContent = 'Верификацията е успешна! Пренасочване...';

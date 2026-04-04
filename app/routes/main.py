@@ -595,12 +595,6 @@ def profile():
     db.close()
 
     is_verified = bool(user['id_verified']) if user and 'id_verified' in user.keys() else False
-    if user and not is_verified:
-        try:
-            status = get_verification_status(current_user_type, current_user_id)
-            is_verified = bool(status.get('verified', False))
-        except Exception:
-            pass
     verification_url = url_for('verify.verify_page', user_type=current_user_type, user_id=current_user_id)
 
     return render_template(
