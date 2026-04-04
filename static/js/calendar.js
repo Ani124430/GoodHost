@@ -54,7 +54,7 @@ function openCalendarModal(hostId, hostName) {
   volCal.hostName = hostName;
   volCal.year  = now.getFullYear();
   volCal.month = now.getMonth() + 1;
-  document.getElementById('cal-modal-title').textContent = 'Наличност: ' + hostName;
+  document.getElementById('cal-modal-title').textContent = 'График на ' + hostName;
   document.getElementById('cal-modal').style.display = 'flex';
   fetchAndDrawVolCal();
 }

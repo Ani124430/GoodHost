@@ -147,7 +147,7 @@
                   <p><strong>Макс. гости:</strong> {{ host['max_guests'] }}</p>
                   <button type="button" class="cal-link-btn"
                           onclick="openCalendarModal({{ host['id'] }}, '{{ host['name'] | e }}')">
-                    📅 Виж наличност
+                    📅 Виж графика
                   </button>
                   <p><a href="tel:{{ host['phone'] }}">📞 {{ host['phone'] }}</a></p>
                   {% if host['social_link'] %}
