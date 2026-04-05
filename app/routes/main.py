@@ -7,7 +7,8 @@ from datetime import datetime, timedelta, date as date_type
 
 import cloudinary
 import cloudinary.uploader
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
+from groq import Groq
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from app.database import get_db
@@ -821,3 +822,50 @@ def reset_password(token):
 
     db.close()
     return render_template('reset_password.html', token=token)
+
+
+CHATBOT_SYSTEM_PROMPT = """Ти си GoodHost Асистент — помощен AI чатбот на платформата GoodHost.
+
+GoodHost е българска платформа за доброволен туризъм, която свързва доброволци и домакини из цяла България. Доброволците получават безплатен престой, като помагат с ежедневни задачи на домакините.
+
+Можеш да помагаш с въпроси като:
+- Как работи платформата
+- Как да се регистрираш като доброволец или домакин
+- Какви са правилата и очакванията
+- Как да намериш домакин или доброволец
+- Как да се свържеш с домакин
+- Въпроси за профила, верификацията и безопасността
+
+Отговаряй на български език, кратко и ясно. Ако не знаеш отговора, кажи на потребителя да се свърже с нас на goodhost230@gmail.com."""
+
+
+@main_bp.route('/api/chat', methods=['POST'])
+def chat():
+    if not config.GROQ_API_KEY:
+        return jsonify({'error': 'Чатботът не е конфигуриран.'}), 503
+
+    data = request.get_json(silent=True)
+    if not data or 'messages' not in data:
+        return jsonify({'error': 'Невалидна заявка.'}), 400
+
+    messages = data['messages']
+    if not isinstance(messages, list) or len(messages) == 0:
+        return jsonify({'error': 'Невалидни съобщения.'}), 400
+
+    # Keep only last 10 messages to limit tokens
+    messages = messages[-10:]
+    for msg in messages:
+        if msg.get('role') not in ('user', 'assistant') or not isinstance(msg.get('content'), str):
+            return jsonify({'error': 'Невалиден формат на съобщенията.'}), 400
+
+    try:
+        client = Groq(api_key=config.GROQ_API_KEY)
+        response = client.chat.completions.create(
+            model='llama-3.3-70b-versatile',
+            max_tokens=500,
+            messages=[{'role': 'system', 'content': CHATBOT_SYSTEM_PROMPT}] + messages,
+        )
+        return jsonify({'reply': response.choices[0].message.content})
+    except Exception as e:
+        print(f'[Chatbot грешка] {e}')
+        return jsonify({'error': 'Грешка при свързване с AI.'}), 500

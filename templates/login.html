@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Вход-GoodHost</title>
   <link rel="stylesheet" href="/static/css/login.css"/>
+  <link rel="stylesheet" href="/static/css/chatbot.css"/>
 </head>
 <body>
 
@@ -69,5 +70,20 @@
   </footer>
 
   <script src="/static/js/nav.js"></script>
+
+  <!-- Chatbot widget -->
+  <button id="chatbot-btn" aria-label="Chat">&#128172;</button>
+  <div id="chatbot-window">
+    <div id="chatbot-header">
+      <div>GoodHost &#1040;&#1089;&#1080;&#1089;&#1090;&#1077;&#1085;&#1090;<br><span>&#1055;&#1080;&#1090;&#1072;&#1081; &#1084;&#1077; &#1085;&#1077;&#1097;&#1086;!</span></div>
+      <button id="chatbot-close">&#10005;</button>
+    </div>
+    <div id="chatbot-messages"></div>
+    <form id="chatbot-form">
+      <textarea id="chatbot-input" placeholder="&#1053;&#1072;&#1087;&#1080;&#1096;&#1080; &#1089;&#1098;&#1086;&#1073;&#1097;&#1077;&#1085;&#1080;&#1077;..." rows="1"></textarea>
+      <button id="chatbot-send" type="submit">&#10148;</button>
+    </form>
+  </div>
+  <script src="/static/js/chatbot.js"></script>
 </body>
 </html>
