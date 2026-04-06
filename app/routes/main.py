@@ -184,6 +184,88 @@ def send_review_invitation_email(to_email, volunteer_name, host_name, review_lin
     send_email(to_email, f"Оцени домакина {host_name} – GoodHost ⭐", body)
 
 
+def send_visit_request_email(host_email, host_name, volunteer_name, from_date, to_date, message, profile_url):
+    period = f"от <strong>{from_date}</strong> до <strong>{to_date}</strong>" if from_date != to_date else f"на <strong>{from_date}</strong>"
+    message_block = f'<p style="font-size:15px;color:#555;background:#f9f3e8;border-left:3px solid #A8C256;padding:0.6em 1em;border-radius:4px;">{message}</p>' if message else ''
+    body = f"""
+    <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;background:#f9f9f9;border-radius:10px;overflow:hidden;">
+      <div style="background:#9B1C35;padding:30px;text-align:center;">
+        <h1 style="color:#FBF3E4;margin:0;font-size:28px;">GoodHost</h1>
+      </div>
+      <div style="padding:30px;background:#fff;">
+        <h2 style="color:#9B1C35;">Нова заявка за посещение 📬</h2>
+        <p style="font-size:16px;color:#333;">Здравей, <strong>{host_name}</strong>!</p>
+        <p style="font-size:15px;color:#555;">
+          Доброволецът <strong>{volunteer_name}</strong> иска да те посети {period}.
+        </p>
+        {message_block}
+        <p style="font-size:15px;color:#555;">Влез в профила си за да приемеш или откажеш заявката.</p>
+        <div style="text-align:center;margin:30px 0;">
+          <a href="{profile_url}"
+             style="display:inline-block;padding:14px 32px;background:#9B1C35;color:#fff;
+                    text-decoration:none;border-radius:6px;font-size:16px;font-weight:bold;">
+            Виж заявката
+          </a>
+        </div>
+      </div>
+      <div style="background:#f0f0f0;padding:15px;text-align:center;">
+        <p style="font-size:13px;color:#777;margin:0;">© 2026 GoodHost. Всички права запазени.</p>
+      </div>
+    </div>
+    """
+    send_email(host_email, f"Нова заявка за посещение от {volunteer_name} – GoodHost 📬", body)
+
+
+def send_visit_approved_email(vol_email, vol_name, host_name, from_date, to_date):
+    period = f"от <strong>{from_date}</strong> до <strong>{to_date}</strong>" if from_date != to_date else f"на <strong>{from_date}</strong>"
+    body = f"""
+    <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;background:#f9f9f9;border-radius:10px;overflow:hidden;">
+      <div style="background:#A8C256;padding:30px;text-align:center;">
+        <h1 style="color:#fff;margin:0;font-size:28px;">GoodHost</h1>
+      </div>
+      <div style="padding:30px;background:#fff;">
+        <h2 style="color:#A8C256;">Заявката ти е приета! ✅</h2>
+        <p style="font-size:16px;color:#333;">Здравей, <strong>{vol_name}</strong>!</p>
+        <p style="font-size:15px;color:#555;">
+          <strong>{host_name}</strong> прие заявката ти за посещение {period}.
+        </p>
+        <p style="font-size:15px;color:#555;">
+          След посещението не забравяй да маркираш "Посетих" в сайта за да можеш да оставиш отзив!
+        </p>
+      </div>
+      <div style="background:#f0f0f0;padding:15px;text-align:center;">
+        <p style="font-size:13px;color:#777;margin:0;">© 2026 GoodHost. Всички права запазени.</p>
+      </div>
+    </div>
+    """
+    send_email(vol_email, f"Заявката ти при {host_name} е приета – GoodHost ✅", body)
+
+
+def send_visit_declined_email(vol_email, vol_name, host_name, from_date, to_date, reason=''):
+    period = f"от <strong>{from_date}</strong> до <strong>{to_date}</strong>" if from_date != to_date else f"на <strong>{from_date}</strong>"
+    reason_block = f'<p style="font-size:14px;color:#888;font-style:italic;">Причина: {reason}</p>' if reason else ''
+    body = f"""
+    <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;background:#f9f9f9;border-radius:10px;overflow:hidden;">
+      <div style="background:#9B1C35;padding:30px;text-align:center;">
+        <h1 style="color:#FBF3E4;margin:0;font-size:28px;">GoodHost</h1>
+      </div>
+      <div style="padding:30px;background:#fff;">
+        <h2 style="color:#9B1C35;">Заявката ти беше отказана</h2>
+        <p style="font-size:16px;color:#333;">Здравей, <strong>{vol_name}</strong>!</p>
+        <p style="font-size:15px;color:#555;">
+          За съжаление <strong>{host_name}</strong> не може да те приеме {period}.
+        </p>
+        {reason_block}
+        <p style="font-size:15px;color:#555;">Можеш да потърсиш друг домакин в платформата.</p>
+      </div>
+      <div style="background:#f0f0f0;padding:15px;text-align:center;">
+        <p style="font-size:13px;color:#777;margin:0;">© 2026 GoodHost. Всички права запазени.</p>
+      </div>
+    </div>
+    """
+    send_email(vol_email, f"Заявката ти при {host_name} беше отказана – GoodHost", body)
+
+
 def send_forgot_password_email(to_email, name, reset_link):
     body = f"""
     <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;background:#f9f9f9;border-radius:10px;overflow:hidden;">
@@ -371,12 +453,22 @@ def hosts():
         ).fetchall()
 
     visited_host_ids = set()
+    visit_status_by_host = {}
     if session.get('user_type') == 'volunteer':
         rows = db.execute(
             'SELECT host_id FROM host_reviews WHERE volunteer_id = ?',
             (session['user_id'],)
         ).fetchall()
         visited_host_ids = {row['host_id'] for row in rows}
+        req_rows = db.execute(
+            '''SELECT host_id, status FROM visit_requests
+               WHERE volunteer_id = ? AND status NOT IN ('cancelled')
+               ORDER BY created_at DESC''',
+            (session['user_id'],)
+        ).fetchall()
+        for row in req_rows:
+            if row['host_id'] not in visit_status_by_host:
+                visit_status_by_host[row['host_id']] = row['status']
 
     today = datetime.now().date()
     future_limit = today + timedelta(days=90)
@@ -402,7 +494,9 @@ def hosts():
 
     db.close()
     return render_template('hosts.html', hosts=hosts_list, search=search,
-                           visited_host_ids=visited_host_ids, next_available=next_available)
+                           visited_host_ids=visited_host_ids,
+                           visit_status_by_host=visit_status_by_host,
+                           next_available=next_available)
 
 
 @main_bp.route('/hosts/<int:host_id>/visited', methods=['POST'])
@@ -423,6 +517,15 @@ def mark_visited(host_id):
         flash('Вече си маркирал посещение при този домакин.', 'info')
         return redirect(url_for('main.hosts'))
 
+    approved_request = db.execute(
+        "SELECT * FROM visit_requests WHERE volunteer_id = ? AND host_id = ? AND status = 'approved'",
+        (volunteer_id, host_id)
+    ).fetchone()
+    if not approved_request:
+        db.close()
+        flash('Трябва да имаш одобрена заявка за посещение при този домакин.', 'error')
+        return redirect(url_for('main.hosts'))
+
     host = db.execute('SELECT name FROM hosts WHERE id = ?', (host_id,)).fetchone()
     if not host:
         db.close()
@@ -436,12 +539,16 @@ def mark_visited(host_id):
         'INSERT INTO host_reviews (volunteer_id, host_id, review_token) VALUES (?, ?, ?)',
         (volunteer_id, host_id, token)
     )
+    db.execute(
+        "UPDATE visit_requests SET status = 'completed' WHERE id = ?",
+        (approved_request['id'],)
+    )
     db.commit()
     db.close()
 
     review_link = url_for('main.review_host', token=token, _external=True)
-    from_date_str = request.form.get('from_date', '').strip()
-    to_date_str   = request.form.get('to_date', '').strip()
+    from_date_str = str(approved_request['from_date'])[:10]
+    to_date_str   = str(approved_request['to_date'])[:10]
     send_review_invitation_email(volunteer['email'], session['user_name'], host['name'], review_link,
                                  from_date=from_date_str, to_date=to_date_str)
 
@@ -609,34 +716,108 @@ def add_busy_range(host_id):
     return jsonify({'status': 'ok', 'added': added})
 
 
-@main_bp.route('/hosts/<int:host_id>/plan-visit', methods=['POST'])
-def plan_visit(host_id):
+@main_bp.route('/hosts/<int:host_id>/request-visit', methods=['POST'])
+def request_visit(host_id):
     if 'user_id' not in session or session.get('user_type') != 'volunteer':
         flash('Трябва да влезеш като доброволец.', 'error')
         return redirect(url_for('main.login'))
-    from_str = request.form.get('from_date', request.form.get('date', '')).strip()
+    from_str = request.form.get('from_date', '').strip()
     to_str   = request.form.get('to_date', from_str).strip()
+    message  = request.form.get('message', '').strip()
     try:
         from_date = datetime.strptime(from_str, '%Y-%m-%d')
         to_date   = datetime.strptime(to_str,   '%Y-%m-%d')
     except ValueError:
         flash('Невалидна дата.', 'error')
         return redirect(url_for('main.hosts'))
+    if from_date > to_date:
+        from_date, to_date = to_date, from_date
     volunteer_id = session['user_id']
     db = get_db()
-    host = db.execute('SELECT name FROM hosts WHERE id = ?', (host_id,)).fetchone()
-    volunteer = db.execute('SELECT email, name FROM volunteers WHERE id = ?', (volunteer_id,)).fetchone()
-    db.close()
+    host = db.execute('SELECT name, email FROM hosts WHERE id = ?', (host_id,)).fetchone()
+    volunteer = db.execute('SELECT name FROM volunteers WHERE id = ?', (volunteer_id,)).fetchone()
     if not host or not volunteer:
-        flash('Не е намерен домакин.', 'error')
+        db.close()
+        flash('Домакинът не е намерен.', 'error')
         return redirect(url_for('main.hosts'))
+    # Отмени предишни pending/declined заявки за същия домакин
+    db.execute(
+        "UPDATE visit_requests SET status = 'cancelled' WHERE volunteer_id = ? AND host_id = ? AND status IN ('pending', 'declined')",
+        (volunteer_id, host_id)
+    )
+    db.execute(
+        'INSERT INTO visit_requests (volunteer_id, host_id, from_date, to_date, message) VALUES (?, ?, ?, ?, ?)',
+        (volunteer_id, host_id, str(from_date.date()), str(to_date.date()), message or None)
+    )
+    db.commit()
+    db.close()
     display_from = from_date.strftime('%d.%m.%Y')
     display_to   = to_date.strftime('%d.%m.%Y')
-    send_plan_visit_email(volunteer['email'], volunteer['name'], host['name'], display_from,
-                          display_date_to=display_to if display_to != display_from else None)
-    period_str = f"от {display_from} до {display_to}" if display_to != display_from else f"на {display_from}"
-    flash(f'Запазено! Ще получиш имейл напомняне след посещението при {host["name"]} {period_str}.', 'success')
+    profile_url  = url_for('main.profile', _external=True)
+    send_visit_request_email(host['email'], host['name'], volunteer['name'],
+                              display_from, display_to, message, profile_url)
+    flash(f'Заявката е изпратена до {host["name"]}! Ще получиш имейл при одобрение.', 'success')
     return redirect(url_for('main.hosts'))
+
+
+@main_bp.route('/visits/<int:visit_id>/approve', methods=['POST'])
+def approve_visit(visit_id):
+    if 'user_id' not in session or session.get('user_type') != 'host':
+        flash('Нямаш право за това действие.', 'error')
+        return redirect(url_for('main.login'))
+    host_id = session['user_id']
+    db = get_db()
+    visit = db.execute(
+        'SELECT * FROM visit_requests WHERE id = ? AND host_id = ?',
+        (visit_id, host_id)
+    ).fetchone()
+    if not visit or visit['status'] != 'pending':
+        db.close()
+        flash('Заявката не е намерена.', 'error')
+        return redirect(url_for('main.profile'))
+    db.execute("UPDATE visit_requests SET status = 'approved' WHERE id = ?", (visit_id,))
+    db.commit()
+    volunteer = db.execute('SELECT name, email FROM volunteers WHERE id = ?', (visit['volunteer_id'],)).fetchone()
+    host = db.execute('SELECT name FROM hosts WHERE id = ?', (host_id,)).fetchone()
+    db.close()
+    send_visit_approved_email(
+        volunteer['email'], volunteer['name'], host['name'],
+        str(visit['from_date'])[:10], str(visit['to_date'])[:10]
+    )
+    flash(f'Прие си заявката на {volunteer["name"]}.', 'success')
+    return redirect(url_for('main.profile'))
+
+
+@main_bp.route('/visits/<int:visit_id>/decline', methods=['POST'])
+def decline_visit(visit_id):
+    if 'user_id' not in session or session.get('user_type') != 'host':
+        flash('Нямаш право за това действие.', 'error')
+        return redirect(url_for('main.login'))
+    host_id = session['user_id']
+    reason  = request.form.get('reason', '').strip()
+    db = get_db()
+    visit = db.execute(
+        'SELECT * FROM visit_requests WHERE id = ? AND host_id = ?',
+        (visit_id, host_id)
+    ).fetchone()
+    if not visit or visit['status'] != 'pending':
+        db.close()
+        flash('Заявката не е намерена.', 'error')
+        return redirect(url_for('main.profile'))
+    db.execute(
+        "UPDATE visit_requests SET status = 'declined', decline_reason = ? WHERE id = ?",
+        (reason or None, visit_id)
+    )
+    db.commit()
+    volunteer = db.execute('SELECT name, email FROM volunteers WHERE id = ?', (visit['volunteer_id'],)).fetchone()
+    host = db.execute('SELECT name FROM hosts WHERE id = ?', (host_id,)).fetchone()
+    db.close()
+    send_visit_declined_email(
+        volunteer['email'], volunteer['name'], host['name'],
+        str(visit['from_date'])[:10], str(visit['to_date'])[:10], reason
+    )
+    flash(f'Отказа заявката на {volunteer["name"]}.', 'success')
+    return redirect(url_for('main.profile'))
 
 
 @main_bp.route('/hosts/<int:host_id>/photos/add', methods=['POST'])
@@ -795,9 +976,25 @@ def profile():
     current_user_id = session.get('user_id')
 
     db = get_db()
+    pending_visit_requests = []
+    volunteer_reviews = []
     if current_user_type == 'host':
         user = db.execute('SELECT * FROM hosts WHERE id = ?', (current_user_id,)).fetchone()
-        volunteer_reviews = []
+        rows = db.execute(
+            '''SELECT vr.*, v.name as volunteer_name, v.email as volunteer_email
+               FROM visit_requests vr
+               JOIN volunteers v ON v.id = vr.volunteer_id
+               WHERE vr.host_id = ? AND vr.status = 'pending'
+               ORDER BY vr.created_at DESC''',
+            (current_user_id,)
+        ).fetchall()
+        pending_visit_requests = [
+            {**dict(row),
+             'from_date': str(row['from_date'])[:10],
+             'to_date': str(row['to_date'])[:10],
+             'created_at': str(row['created_at'])[:10]}
+            for row in rows
+        ]
     else:
         user = db.execute('SELECT * FROM volunteers WHERE id = ?', (current_user_id,)).fetchone()
         rows = db.execute(
@@ -823,7 +1020,8 @@ def profile():
         is_verified=is_verified,
         verification_url=verification_url,
         stripe_publishable_key=config.STRIPE_PUBLISHABLE_KEY,
-        volunteer_reviews=volunteer_reviews
+        volunteer_reviews=volunteer_reviews,
+        pending_visit_requests=pending_visit_requests
     )
 
 

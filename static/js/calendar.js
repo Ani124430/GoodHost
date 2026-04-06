@@ -142,14 +142,15 @@ function showVolRangeConfirm(from, to) {
   } else {
     action.innerHTML =
       '<p class="cal-sel-info">Период: <strong>' + fmtDisp(from) + ' — ' + fmtDisp(to) + '</strong></p>' +
-      '<div style="display:flex;gap:0.5em;margin-top:0.4em;">' +
-        '<form method="POST" action="/hosts/' + volCal.hostId + '/plan-visit">' +
-          '<input type="hidden" name="from_date" value="' + from + '">' +
-          '<input type="hidden" name="to_date" value="' + to + '">' +
-          '<button type="submit" class="cal-btn cal-btn-plan" style="width:auto;padding:0.45em 1.1em;">📅 Ще посетя от ' + fmtDisp(from) + ' до ' + fmtDisp(to) + '</button>' +
-        '</form>' +
-        '<button onclick="clearVolRange()" style="background:none;border:1px solid #999;color:#666;border-radius:1.5em;padding:0.45em 0.9em;font-size:0.85rem;font-family:Georgia,serif;cursor:pointer;">Откажи</button>' +
-      '</div>';
+      '<form method="POST" action="/hosts/' + volCal.hostId + '/request-visit" style="margin-top:0.4em;">' +
+        '<input type="hidden" name="from_date" value="' + from + '">' +
+        '<input type="hidden" name="to_date" value="' + to + '">' +
+        '<textarea name="message" rows="2" placeholder="Кажи нещо за себе си (по желание)..." style="width:100%;box-sizing:border-box;font-size:0.82rem;border:1px solid rgba(155,28,53,0.25);border-radius:0.3em;padding:0.4em 0.5em;resize:vertical;font-family:Georgia,serif;margin-bottom:0.4em;"></textarea>' +
+        '<div style="display:flex;gap:0.5em;">' +
+          '<button type="submit" class="cal-btn cal-btn-plan" style="width:auto;padding:0.45em 1.1em;">📅 Заяви посещение</button>' +
+          '<button type="button" onclick="clearVolRange()" style="background:none;border:1px solid #999;color:#666;border-radius:1.5em;padding:0.45em 0.9em;font-size:0.85rem;font-family:Georgia,serif;cursor:pointer;">Откажи</button>' +
+        '</div>' +
+      '</form>';
   }
 }
 
@@ -180,14 +181,15 @@ function selectVolDay(dateStr, isPastOrToday) {
     } else {
       action.innerHTML =
         '<p class="cal-sel-info">Избрана дата: <strong>' + disp + '</strong></p>' +
-        '<div style="display:flex;gap:0.5em;margin-top:0.4em;">' +
-          '<form method="POST" action="/hosts/' + volCal.hostId + '/plan-visit">' +
-            '<input type="hidden" name="from_date" value="' + dateStr + '">' +
-            '<input type="hidden" name="to_date" value="' + dateStr + '">' +
-            '<button type="submit" class="cal-btn cal-btn-plan" style="width:auto;padding:0.45em 1.1em;">📅 Ще посетя на ' + disp + '</button>' +
-          '</form>' +
-          '<button onclick="clearVolRange()" style="background:none;border:1px solid #999;color:#666;border-radius:1.5em;padding:0.45em 0.9em;font-size:0.85rem;font-family:Georgia,serif;cursor:pointer;">Откажи</button>' +
-        '</div>';
+        '<form method="POST" action="/hosts/' + volCal.hostId + '/request-visit" style="margin-top:0.4em;">' +
+          '<input type="hidden" name="from_date" value="' + dateStr + '">' +
+          '<input type="hidden" name="to_date" value="' + dateStr + '">' +
+          '<textarea name="message" rows="2" placeholder="Кажи нещо за себе си (по желание)..." style="width:100%;box-sizing:border-box;font-size:0.82rem;border:1px solid rgba(155,28,53,0.25);border-radius:0.3em;padding:0.4em 0.5em;resize:vertical;font-family:Georgia,serif;margin-bottom:0.4em;"></textarea>' +
+          '<div style="display:flex;gap:0.5em;">' +
+            '<button type="submit" class="cal-btn cal-btn-plan" style="width:auto;padding:0.45em 1.1em;">📅 Заяви посещение</button>' +
+            '<button type="button" onclick="clearVolRange()" style="background:none;border:1px solid #999;color:#666;border-radius:1.5em;padding:0.45em 0.9em;font-size:0.85rem;font-family:Georgia,serif;cursor:pointer;">Откажи</button>' +
+          '</div>' +
+        '</form>';
     }
     volCal.rangeStart = null;
   } else {

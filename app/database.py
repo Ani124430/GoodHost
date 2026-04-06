@@ -131,5 +131,19 @@ def init_db():
         )
     ''')
 
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS visit_requests (
+            id SERIAL PRIMARY KEY,
+            volunteer_id INTEGER NOT NULL,
+            host_id INTEGER NOT NULL,
+            from_date DATE NOT NULL,
+            to_date DATE NOT NULL,
+            message TEXT,
+            status TEXT NOT NULL DEFAULT 'pending',
+            decline_reason TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
     conn.commit()
     conn.close()

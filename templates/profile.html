@@ -120,6 +120,40 @@
       </div>
 
 
+      {% if current_user_type == 'host' and pending_visit_requests %}
+      <div class="volunteer-reviews-section">
+        <div class="photos-header">
+          <span class="photos-title">Заявки за посещение <span class="photos-count">({{ pending_visit_requests|length }})</span></span>
+        </div>
+        <div class="vol-reviews-list">
+          {% for req in pending_visit_requests %}
+          <div class="vol-review-card" style="border-left: 3px solid #9B1C35;">
+            <div class="vol-review-header">
+              <span class="vol-review-host">{{ req['volunteer_name'] }}</span>
+              <span class="vol-review-date">
+                {{ req['from_date'] }}{% if req['to_date'] != req['from_date'] %} — {{ req['to_date'] }}{% endif %}
+              </span>
+              <span class="vol-review-date" style="opacity:0.6;">изпратена {{ req['created_at'] }}</span>
+            </div>
+            {% if req['message'] %}
+            <p class="vol-review-comment">{{ req['message'] }}</p>
+            {% endif %}
+            <div style="display:flex;gap:0.5em;margin-top:0.5em;flex-wrap:wrap;">
+              <form action="/visits/{{ req['id'] }}/approve" method="POST">
+                <button type="submit" class="save-bio-btn" style="background:#A8C256;">Приеми</button>
+              </form>
+              <form action="/visits/{{ req['id'] }}/decline" method="POST" class="decline-form-{{ req['id'] }}">
+                <input type="hidden" name="reason" class="decline-reason-{{ req['id'] }}" value="">
+                <button type="button" class="delete-photo-btn"
+                        onclick="submitDecline({{ req['id'] }})">Откажи</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
       {% if current_user_type == 'host' %}
       <div class="host-cal-section">
         <div class="photos-header">
@@ -232,6 +266,13 @@
   <script src="/static/js/calendar.js"></script>
   <script src="/static/js/delete-modal.js"></script>
   <script src="/static/js/nav.js"></script>
+  <script>
+    function submitDecline(reqId) {
+      var reason = prompt('Причина за отказ (по желание):') || '';
+      document.querySelector('.decline-reason-' + reqId).value = reason;
+      document.querySelector('.decline-form-' + reqId).submit();
+    }
+  </script>
   <script>
     function openBioEdit() {
       document.getElementById('bio-display').style.display = 'none';

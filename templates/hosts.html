@@ -124,9 +124,34 @@
                 {% if host['id'] in visited_host_ids %}
                   <span class="visited-label">✓ Посещението е маркирано</span>
                 {% else %}
-                  <form action="/hosts/{{ host['id'] }}/visited" method="POST">
-                    <button type="submit" class="visit-btn">Посетих</button>
-                  </form>
+                  {% set vstat = visit_status_by_host.get(host['id']) %}
+                  {% if vstat == 'approved' %}
+                    <form action="/hosts/{{ host['id'] }}/visited" method="POST">
+                      <button type="submit" class="visit-btn">✓ Посетих</button>
+                    </form>
+                  {% elif vstat == 'pending' %}
+                    <span class="visited-label" style="color:#9B1C35;opacity:0.75;">⏳ Заявката е изпратена</span>
+                  {% else %}
+                    {% if vstat == 'declined' %}
+                      <span class="visited-label" style="color:#c0392b;font-size:0.78rem;">✗ Отказано — можеш да заявиш отново</span>
+                    {% endif %}
+                    <button type="button" class="visit-btn"
+                            onclick="toggleRequestForm({{ host['id'] }})">Заяви посещение</button>
+                    <div id="req-form-{{ host['id'] }}" class="visit-request-form" style="display:none;">
+                      <form action="/hosts/{{ host['id'] }}/request-visit" method="POST">
+                        <div class="req-dates">
+                          <label>От <input type="date" name="from_date" required></label>
+                          <label>До <input type="date" name="to_date" required></label>
+                        </div>
+                        <textarea name="message" rows="2" placeholder="Кажи нещо за себе си (по желание)..."></textarea>
+                        <div style="display:flex;gap:0.5em;margin-top:0.4em;">
+                          <button type="submit" class="visit-btn" style="background:#A8C256;">Изпрати</button>
+                          <button type="button" style="background:none;border:1px solid #ccc;border-radius:1.5em;padding:0.4em 0.9em;font-size:0.82rem;cursor:pointer;"
+                                  onclick="toggleRequestForm({{ host['id'] }})">Откажи</button>
+                        </div>
+                      </form>
+                    </div>
+                  {% endif %}
                 {% endif %}
               {% endif %}
 
@@ -223,6 +248,19 @@
   <script src="/static/js/carousel.js"></script>
   <script src="/static/js/delete-modal.js"></script>
   <script src="/static/js/nav.js"></script>
+  <style>
+    .visit-request-form { margin-top: 0.5em; padding: 0.75em; background: #fdf6f0; border: 1px solid rgba(155,28,53,0.15); border-radius: 0.5em; }
+    .req-dates { display: flex; gap: 0.5em; flex-wrap: wrap; margin-bottom: 0.4em; }
+    .req-dates label { font-size: 0.8rem; color: #9B1C35; display: flex; flex-direction: column; gap: 0.2em; }
+    .req-dates input[type=date] { font-size: 0.82rem; border: 1px solid rgba(155,28,53,0.3); border-radius: 0.3em; padding: 0.25em 0.4em; }
+    .visit-request-form textarea { width: 100%; box-sizing: border-box; font-size: 0.82rem; border: 1px solid rgba(155,28,53,0.25); border-radius: 0.3em; padding: 0.4em 0.5em; resize: vertical; font-family: Georgia, serif; }
+  </style>
+  <script>
+    function toggleRequestForm(hostId) {
+      var el = document.getElementById('req-form-' + hostId);
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+  </script>
   <script>
     function openReviewsModal(hostId, hostName) {
       const modal = document.getElementById('reviews-modal');
