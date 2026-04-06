@@ -125,7 +125,6 @@
         <div class="photos-header">
           <span class="photos-title">Моят календар</span>
         </div>
-        <p class="host-cal-note">Кликни на ден, за да го маркираш като зает (червено). Доброволците ще виждат кога си свободен.</p>
         <div class="mini-cal">
           <div class="mini-cal-nav">
             <button onclick="hostCalChangeMonth(-1)">&#8249;</button>
@@ -133,9 +132,10 @@
             <button onclick="hostCalChangeMonth(1)">&#8250;</button>
           </div>
           <div class="cal-grid" id="host-cal-grid"></div>
+          <div id="host-cal-action" style="margin-top:0.6em;"></div>
           <div class="cal-legend" style="margin-top:0.5em;">
             <span><span class="cal-legend-dot" style="background:#f8d7da;border:1px solid #e0a0a0;"></span>Зает (кликни за премахване)</span>
-            <span><span class="cal-legend-dot" style="background:#fff;border:1px solid rgba(155,28,53,0.2);"></span>Свободен</span>
+            <span><span class="cal-legend-dot" style="background:#A8C256;"></span>Избран период</span>
           </div>
         </div>
       </div>
@@ -170,6 +170,39 @@
             <span class="photos-placeholder">Няма снимки</span>
           {% endif %}
         </div>
+      </div>
+      {% endif %}
+
+      {% if current_user_type == 'volunteer' %}
+      <div class="volunteer-reviews-section">
+        <div class="photos-header">
+          <span class="photos-title">Моите коментари <span class="photos-count">({{ volunteer_reviews|length }})</span></span>
+        </div>
+        {% if volunteer_reviews %}
+          <div class="vol-reviews-list">
+            {% for rev in volunteer_reviews %}
+            <div class="vol-review-card">
+              <div class="vol-review-header">
+                <span class="vol-review-host">{{ rev['host_name'] }}</span>
+                <span class="vol-review-rating">
+                  {% for i in range(1, 6) %}
+                    {% if i <= rev['rating'] %}&#9733;{% else %}&#9734;{% endif %}
+                  {% endfor %}
+                </span>
+                <span class="vol-review-date">{{ rev['created_at'] }}</span>
+              </div>
+              {% if rev['comment'] %}
+              <p class="vol-review-comment">{{ rev['comment'] }}</p>
+              {% endif %}
+              <form action="/volunteers/{{ user['id'] }}/reviews/{{ rev['id'] }}/delete" method="POST" class="vol-review-delete-form">
+                <button type="submit" class="delete-photo-btn" title="Изтрий коментара" onclick="return confirm('Сигурен ли си, че искаш да изтриеш този коментар?')">Изтрий</button>
+              </form>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="photos-placeholder">Нямаш написани коментари.</p>
+        {% endif %}
       </div>
       {% endif %}
 

@@ -451,6 +451,79 @@ main {
   grid-column: 1 / -1;
 }
 
+.volunteer-reviews-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+  margin-top: 1.5em;
+}
+
+.vol-reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75em;
+}
+
+.vol-review-card {
+  background: #fff;
+  border: 1px solid rgba(155, 28, 53, 0.12);
+  border-radius: 0.75em;
+  padding: 0.85em 1.1em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+  box-shadow: 0 0.125em 1em rgba(155, 28, 53, 0.05);
+}
+
+.vol-review-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+  flex-wrap: wrap;
+}
+
+.vol-review-host {
+  font-weight: bold;
+  font-size: 0.95rem;
+  color: var(--red);
+}
+
+.vol-review-rating {
+  color: #e6a817;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+}
+
+.vol-review-date {
+  color: var(--red);
+  opacity: 0.45;
+  font-size: 0.8rem;
+  margin-left: auto;
+}
+
+.vol-review-comment {
+  font-size: 0.88rem;
+  color: var(--red);
+  opacity: 0.8;
+  line-height: 1.5;
+}
+
+.vol-review-delete-form {
+  margin-top: 0.3em;
+  align-self: flex-end;
+}
+
+.vol-review-delete-form .delete-photo-btn {
+  position: static;
+  width: auto;
+  height: auto;
+  border-radius: 1em;
+  opacity: 1;
+  font-size: 0.78rem;
+  padding: 0.3em 0.85em;
+  font-family: Georgia, serif;
+}
+
 .lightbox-overlay {
   position: fixed;
   top: 0; left: 0;

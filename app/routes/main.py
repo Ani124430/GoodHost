@@ -116,7 +116,9 @@ def send_login_email(to_email, name):
     send_email(to_email, "Нов вход в профила ти – GoodHost 🔐", body)
 
 
-def send_plan_visit_email(to_email, volunteer_name, host_name, display_date):
+def send_plan_visit_email(to_email, volunteer_name, host_name, display_date, display_date_to=None):
+    period = f"от <strong>{display_date}</strong> до <strong>{display_date_to}</strong>" if display_date_to and display_date_to != display_date else f"на <strong>{display_date}</strong>"
+    subject_date = f"{display_date}–{display_date_to}" if display_date_to and display_date_to != display_date else display_date
     body = f"""
     <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;background:#f9f9f9;border-radius:10px;overflow:hidden;">
       <div style="background:#9B1C35;padding:30px;text-align:center;">
@@ -126,7 +128,7 @@ def send_plan_visit_email(to_email, volunteer_name, host_name, display_date):
         <h2 style="color:#9B1C35;">Планирано посещение 📅</h2>
         <p style="font-size:16px;color:#333;">Здравей, <strong>{volunteer_name}</strong>!</p>
         <p style="font-size:15px;color:#555;">
-          Маркирал си планирано посещение при <strong>{host_name}</strong> на <strong>{display_date}</strong>.
+          Маркирал си планирано посещение при <strong>{host_name}</strong> {period}.
         </p>
         <p style="font-size:15px;color:#555;">
           След като ги посетиш, не забравяй да оставиш отзив — помага на другите доброволци да изберат добре!
@@ -137,10 +139,17 @@ def send_plan_visit_email(to_email, volunteer_name, host_name, display_date):
       </div>
     </div>
     """
-    send_email(to_email, f"Планирано посещение при {host_name} на {display_date} – GoodHost 📅", body)
+    send_email(to_email, f"Планирано посещение при {host_name} на {subject_date} – GoodHost 📅", body)
 
 
-def send_review_invitation_email(to_email, volunteer_name, host_name, review_link):
+def send_review_invitation_email(to_email, volunteer_name, host_name, review_link, from_date='', to_date=''):
+    if from_date and to_date and from_date != to_date:
+        visit_info = f"от <strong>{from_date}</strong> до <strong>{to_date}</strong>"
+    elif from_date:
+        visit_info = f"на <strong>{from_date}</strong>"
+    else:
+        visit_info = ''
+    visit_sentence = f"Маркирал си посещение при <strong>{host_name}</strong>{' ' + visit_info if visit_info else ''}."
     body = f"""
     <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;background:#f9f9f9;border-radius:10px;overflow:hidden;">
       <div style="background:#9B1C35;padding:30px;text-align:center;">
@@ -150,7 +159,7 @@ def send_review_invitation_email(to_email, volunteer_name, host_name, review_lin
         <h2 style="color:#9B1C35;">Оцени домакина си ⭐</h2>
         <p style="font-size:16px;color:#333;">Здравей, <strong>{volunteer_name}</strong>!</p>
         <p style="font-size:15px;color:#555;">
-          Маркирал си посещение при <strong>{host_name}</strong>.
+          {visit_sentence}
           Ще ни помогнеш много ако споделиш как е минало!
         </p>
         <p style="font-size:15px;color:#555;">
@@ -431,7 +440,10 @@ def mark_visited(host_id):
     db.close()
 
     review_link = url_for('main.review_host', token=token, _external=True)
-    send_review_invitation_email(volunteer['email'], session['user_name'], host['name'], review_link)
+    from_date_str = request.form.get('from_date', '').strip()
+    to_date_str   = request.form.get('to_date', '').strip()
+    send_review_invitation_email(volunteer['email'], session['user_name'], host['name'], review_link,
+                                 from_date=from_date_str, to_date=to_date_str)
 
     flash(f'Изпратихме ти имейл с линк за оценка на {host["name"]}!', 'success')
     return redirect(url_for('main.hosts'))
@@ -506,6 +518,22 @@ def host_reviews_json(host_id):
     return jsonify(result)
 
 
+@main_bp.route('/volunteers/<int:volunteer_id>/reviews/<int:review_id>/delete', methods=['POST'])
+def delete_volunteer_review(volunteer_id, review_id):
+    if 'user_id' not in session or session.get('user_type') != 'volunteer' or session['user_id'] != volunteer_id:
+        flash('Нямаш право да изтриеш този коментар.', 'error')
+        return redirect(url_for('main.profile'))
+    db = get_db()
+    db.execute(
+        'DELETE FROM host_reviews WHERE id = ? AND volunteer_id = ?',
+        (review_id, volunteer_id)
+    )
+    db.commit()
+    db.close()
+    flash('Коментарът беше изтрит.', 'success')
+    return redirect(url_for('main.profile'))
+
+
 @main_bp.route('/hosts/<int:host_id>/busy-days')
 def get_busy_days(host_id):
     from flask import jsonify
@@ -550,14 +578,47 @@ def toggle_busy_day(host_id):
         return jsonify({'status': 'added'})
 
 
+@main_bp.route('/hosts/<int:host_id>/busy-days/range', methods=['POST'])
+def add_busy_range(host_id):
+    from flask import jsonify
+    if 'user_id' not in session or session.get('user_type') != 'host' or session['user_id'] != host_id:
+        return jsonify({'error': 'unauthorized'}), 403
+    data = request.get_json()
+    from_str = (data or {}).get('from_date', '').strip()
+    to_str   = (data or {}).get('to_date',   '').strip()
+    try:
+        from_date = datetime.strptime(from_str, '%Y-%m-%d').date()
+        to_date   = datetime.strptime(to_str,   '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'invalid dates'}), 400
+    if from_date > to_date:
+        from_date, to_date = to_date, from_date
+    if (to_date - from_date).days > 365:
+        return jsonify({'error': 'range too large'}), 400
+    db = get_db()
+    current = from_date
+    added = []
+    while current <= to_date:
+        ds = str(current)
+        if not db.execute('SELECT id FROM host_busy_days WHERE host_id=? AND date=?', (host_id, ds)).fetchone():
+            db.execute('INSERT INTO host_busy_days (host_id, date) VALUES (?, ?)', (host_id, ds))
+            added.append(ds)
+        current += timedelta(days=1)
+    db.commit()
+    db.close()
+    return jsonify({'status': 'ok', 'added': added})
+
+
 @main_bp.route('/hosts/<int:host_id>/plan-visit', methods=['POST'])
 def plan_visit(host_id):
     if 'user_id' not in session or session.get('user_type') != 'volunteer':
         flash('Трябва да влезеш като доброволец.', 'error')
         return redirect(url_for('main.login'))
-    date_str = request.form.get('date', '').strip()
+    from_str = request.form.get('from_date', request.form.get('date', '')).strip()
+    to_str   = request.form.get('to_date', from_str).strip()
     try:
-        visit_date = datetime.strptime(date_str, '%Y-%m-%d')
+        from_date = datetime.strptime(from_str, '%Y-%m-%d')
+        to_date   = datetime.strptime(to_str,   '%Y-%m-%d')
     except ValueError:
         flash('Невалидна дата.', 'error')
         return redirect(url_for('main.hosts'))
@@ -569,9 +630,12 @@ def plan_visit(host_id):
     if not host or not volunteer:
         flash('Не е намерен домакин.', 'error')
         return redirect(url_for('main.hosts'))
-    display_date = visit_date.strftime('%d.%m.%Y')
-    send_plan_visit_email(volunteer['email'], volunteer['name'], host['name'], display_date)
-    flash(f'Запазено! Ще получиш имейл напомняне след посещението при {host["name"]} на {display_date}.', 'success')
+    display_from = from_date.strftime('%d.%m.%Y')
+    display_to   = to_date.strftime('%d.%m.%Y')
+    send_plan_visit_email(volunteer['email'], volunteer['name'], host['name'], display_from,
+                          display_date_to=display_to if display_to != display_from else None)
+    period_str = f"от {display_from} до {display_to}" if display_to != display_from else f"на {display_from}"
+    flash(f'Запазено! Ще получиш имейл напомняне след посещението при {host["name"]} {period_str}.', 'success')
     return redirect(url_for('main.hosts'))
 
 
@@ -733,8 +797,21 @@ def profile():
     db = get_db()
     if current_user_type == 'host':
         user = db.execute('SELECT * FROM hosts WHERE id = ?', (current_user_id,)).fetchone()
+        volunteer_reviews = []
     else:
         user = db.execute('SELECT * FROM volunteers WHERE id = ?', (current_user_id,)).fetchone()
+        rows = db.execute(
+            '''SELECT r.id, r.rating, r.comment, r.created_at, h.name as host_name
+               FROM host_reviews r
+               JOIN hosts h ON h.id = r.host_id
+               WHERE r.volunteer_id = ? AND r.token_used = 1 AND r.rating IS NOT NULL
+               ORDER BY r.created_at DESC''',
+            (current_user_id,)
+        ).fetchall()
+        volunteer_reviews = [
+            {**dict(row), 'created_at': str(row['created_at'])[:10]}
+            for row in rows
+        ]
     db.close()
 
     is_verified = bool(user['id_verified']) if user and 'id_verified' in user.keys() else False
@@ -745,7 +822,8 @@ def profile():
         user=user,
         is_verified=is_verified,
         verification_url=verification_url,
-        stripe_publishable_key=config.STRIPE_PUBLISHABLE_KEY
+        stripe_publishable_key=config.STRIPE_PUBLISHABLE_KEY,
+        volunteer_reviews=volunteer_reviews
     )
 
 
