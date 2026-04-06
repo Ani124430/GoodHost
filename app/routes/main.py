@@ -184,8 +184,9 @@ def send_review_invitation_email(to_email, volunteer_name, host_name, review_lin
     send_email(to_email, f"Оцени домакина {host_name} – GoodHost ⭐", body)
 
 
-def send_visit_request_email(host_email, host_name, volunteer_name, from_date, to_date, message, profile_url):
+def send_visit_request_email(host_email, host_name, volunteer_name, from_date, to_date, message, profile_url, num_guests=1):
     period = f"от <strong>{from_date}</strong> до <strong>{to_date}</strong>" if from_date != to_date else f"на <strong>{from_date}</strong>"
+    guests_line = f'<p style="font-size:15px;color:#555;">Брой гости: <strong>{num_guests}</strong></p>'
     message_block = f'<p style="font-size:15px;color:#555;background:#f9f3e8;border-left:3px solid #A8C256;padding:0.6em 1em;border-radius:4px;">{message}</p>' if message else ''
     body = f"""
     <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;background:#f9f9f9;border-radius:10px;overflow:hidden;">
@@ -198,6 +199,7 @@ def send_visit_request_email(host_email, host_name, volunteer_name, from_date, t
         <p style="font-size:15px;color:#555;">
           Доброволецът <strong>{volunteer_name}</strong> иска да те посети {period}.
         </p>
+        {guests_line}
         {message_block}
         <p style="font-size:15px;color:#555;">Влез в профила си за да приемеш или откажеш заявката.</p>
         <div style="text-align:center;margin:30px 0;">
@@ -472,6 +474,8 @@ def hosts():
 
     today = datetime.now().date()
     future_limit = today + timedelta(days=90)
+
+    # Ръчно зададени заети дни
     busy_rows = db.execute(
         'SELECT host_id, date FROM host_busy_days WHERE date >= ? AND date <= ?',
         (str(today), str(future_limit))
@@ -479,6 +483,33 @@ def hosts():
     busy_by_host = {}
     for row in busy_rows:
         busy_by_host.setdefault(row['host_id'], set()).add(str(row['date'])[:10])
+
+    # Автоматични заети дни от одобрени заявки, запълнили капацитета
+    visit_rows = db.execute(
+        """SELECT vr.host_id, vr.from_date, vr.to_date, vr.num_guests, h.max_guests
+           FROM visit_requests vr
+           JOIN hosts h ON h.id = vr.host_id
+           WHERE vr.status IN ('approved', 'completed')
+           AND vr.to_date >= ? AND vr.from_date <= ?""",
+        (str(today), str(future_limit))
+    ).fetchall()
+    from collections import defaultdict
+    guest_count_by_host_day = defaultdict(lambda: defaultdict(int))
+    max_guests_by_host = {}
+    for row in visit_rows:
+        hid = row['host_id']
+        max_guests_by_host[hid] = row['max_guests']
+        d = datetime.strptime(str(row['from_date'])[:10], '%Y-%m-%d').date()
+        end = datetime.strptime(str(row['to_date'])[:10], '%Y-%m-%d').date()
+        while d <= end and d <= future_limit:
+            if d >= today:
+                guest_count_by_host_day[hid][str(d)] += row['num_guests']
+            d += timedelta(days=1)
+    for hid, day_counts in guest_count_by_host_day.items():
+        mg = max_guests_by_host.get(hid, 1)
+        for day, count in day_counts.items():
+            if count >= mg:
+                busy_by_host.setdefault(hid, set()).add(day)
 
     next_available = {}
     for host in hosts_list:
@@ -647,6 +678,8 @@ def get_busy_days(host_id):
     year  = request.args.get('year',  type=int, default=datetime.now().year)
     month = request.args.get('month', type=int, default=datetime.now().month)
     db = get_db()
+
+    # Ръчно зададени заети дни
     rows = db.execute(
         '''SELECT date FROM host_busy_days
            WHERE host_id = ?
@@ -654,8 +687,39 @@ def get_busy_days(host_id):
              AND EXTRACT(MONTH FROM date) = ?''',
         (host_id, year, month)
     ).fetchall()
+    busy_days = {str(r['date'])[:10] for r in rows}
+
+    # Автоматични заети дни от одобрени заявки, запълнили капацитета
+    host = db.execute('SELECT max_guests FROM hosts WHERE id = ?', (host_id,)).fetchone()
+    if host:
+        max_guests = host['max_guests']
+        if month == 12:
+            first_day = date_type(year, month, 1)
+            last_day  = date_type(year + 1, 1, 1) - timedelta(days=1)
+        else:
+            first_day = date_type(year, month, 1)
+            last_day  = date_type(year, month + 1, 1) - timedelta(days=1)
+        visits = db.execute(
+            """SELECT from_date, to_date, num_guests FROM visit_requests
+               WHERE host_id = ? AND status IN ('approved', 'completed')
+               AND to_date >= ? AND from_date <= ?""",
+            (host_id, str(first_day), str(last_day))
+        ).fetchall()
+        from collections import defaultdict
+        guest_count = defaultdict(int)
+        for v in visits:
+            d = datetime.strptime(str(v['from_date'])[:10], '%Y-%m-%d').date()
+            end = datetime.strptime(str(v['to_date'])[:10], '%Y-%m-%d').date()
+            while d <= end:
+                if first_day <= d <= last_day:
+                    guest_count[str(d)] += v['num_guests']
+                d += timedelta(days=1)
+        for day, count in guest_count.items():
+            if count >= max_guests:
+                busy_days.add(day)
+
     db.close()
-    return jsonify({'busy_days': [str(r['date'])[:10] for r in rows]})
+    return jsonify({'busy_days': sorted(busy_days)})
 
 
 @main_bp.route('/hosts/<int:host_id>/busy-days/toggle', methods=['POST'])
@@ -734,20 +798,21 @@ def request_visit(host_id):
         from_date, to_date = to_date, from_date
     volunteer_id = session['user_id']
     db = get_db()
-    host = db.execute('SELECT name, email FROM hosts WHERE id = ?', (host_id,)).fetchone()
+    host = db.execute('SELECT name, email, max_guests FROM hosts WHERE id = ?', (host_id,)).fetchone()
     volunteer = db.execute('SELECT name FROM volunteers WHERE id = ?', (volunteer_id,)).fetchone()
     if not host or not volunteer:
         db.close()
         flash('Домакинът не е намерен.', 'error')
         return redirect(url_for('main.hosts'))
+    num_guests = max(1, min(int(request.form.get('num_guests', 1) or 1), host['max_guests']))
     # Отмени предишни pending/declined заявки за същия домакин
     db.execute(
         "UPDATE visit_requests SET status = 'cancelled' WHERE volunteer_id = ? AND host_id = ? AND status IN ('pending', 'declined')",
         (volunteer_id, host_id)
     )
     db.execute(
-        'INSERT INTO visit_requests (volunteer_id, host_id, from_date, to_date, message) VALUES (?, ?, ?, ?, ?)',
-        (volunteer_id, host_id, str(from_date.date()), str(to_date.date()), message or None)
+        'INSERT INTO visit_requests (volunteer_id, host_id, from_date, to_date, message, num_guests) VALUES (?, ?, ?, ?, ?, ?)',
+        (volunteer_id, host_id, str(from_date.date()), str(to_date.date()), message or None, num_guests)
     )
     db.commit()
     db.close()
@@ -755,7 +820,7 @@ def request_visit(host_id):
     display_to   = to_date.strftime('%d.%m.%Y')
     profile_url  = url_for('main.profile', _external=True)
     send_visit_request_email(host['email'], host['name'], volunteer['name'],
-                              display_from, display_to, message, profile_url)
+                              display_from, display_to, message, profile_url, num_guests=num_guests)
     flash(f'Заявката е изпратена до {host["name"]}! Ще получиш имейл при одобрение.', 'success')
     return redirect(url_for('main.hosts'))
 

@@ -48,18 +48,29 @@
 })();
 
 // ===================== VOLUNTEER CALENDAR MODAL =====================
-var volCal = { hostId: null, hostName: '', year: 0, month: 0, busy: new Set(), rangeStart: null };
+var volCal = { hostId: null, hostName: '', maxGuests: 1, year: 0, month: 0, busy: new Set(), rangeStart: null };
 
-function openCalendarModal(hostId, hostName) {
+function openCalendarModal(hostId, hostName, maxGuests) {
   var now = new Date();
   volCal.hostId = hostId;
   volCal.hostName = hostName;
+  volCal.maxGuests = maxGuests || 1;
   volCal.year  = now.getFullYear();
   volCal.month = now.getMonth() + 1;
   volCal.rangeStart = null;
   document.getElementById('cal-modal-title').textContent = 'График на ' + hostName;
   document.getElementById('cal-modal').style.display = 'flex';
   fetchAndDrawVolCal();
+}
+
+function buildGuestsSelect() {
+  var opts = '';
+  for (var i = 1; i <= volCal.maxGuests; i++) {
+    opts += '<option value="' + i + '">' + i + (i === 1 ? ' (само аз)' : '') + '</option>';
+  }
+  return '<label style="font-size:0.8rem;color:#9B1C35;display:block;margin:0.4em 0;">Брой гости ' +
+    '<select name="num_guests" style="font-size:0.82rem;border:1px solid rgba(155,28,53,0.3);border-radius:0.3em;padding:0.2em 0.4em;margin-left:0.3em;">' +
+    opts + '</select></label>';
 }
 
 function closeCalendarModal(e) {
@@ -145,6 +156,7 @@ function showVolRangeConfirm(from, to) {
       '<form method="POST" action="/hosts/' + volCal.hostId + '/request-visit" style="margin-top:0.4em;">' +
         '<input type="hidden" name="from_date" value="' + from + '">' +
         '<input type="hidden" name="to_date" value="' + to + '">' +
+        buildGuestsSelect() +
         '<textarea name="message" rows="2" placeholder="Кажи нещо за себе си (по желание)..." style="width:100%;box-sizing:border-box;font-size:0.82rem;border:1px solid rgba(155,28,53,0.25);border-radius:0.3em;padding:0.4em 0.5em;resize:vertical;font-family:Georgia,serif;margin-bottom:0.4em;"></textarea>' +
         '<div style="display:flex;gap:0.5em;">' +
           '<button type="submit" class="cal-btn cal-btn-plan" style="width:auto;padding:0.45em 1.1em;">📅 Заяви посещение</button>' +
@@ -184,6 +196,7 @@ function selectVolDay(dateStr, isPastOrToday) {
         '<form method="POST" action="/hosts/' + volCal.hostId + '/request-visit" style="margin-top:0.4em;">' +
           '<input type="hidden" name="from_date" value="' + dateStr + '">' +
           '<input type="hidden" name="to_date" value="' + dateStr + '">' +
+          buildGuestsSelect() +
           '<textarea name="message" rows="2" placeholder="Кажи нещо за себе си (по желание)..." style="width:100%;box-sizing:border-box;font-size:0.82rem;border:1px solid rgba(155,28,53,0.25);border-radius:0.3em;padding:0.4em 0.5em;resize:vertical;font-family:Georgia,serif;margin-bottom:0.4em;"></textarea>' +
           '<div style="display:flex;gap:0.5em;">' +
             '<button type="submit" class="cal-btn cal-btn-plan" style="width:auto;padding:0.45em 1.1em;">📅 Заяви посещение</button>' +

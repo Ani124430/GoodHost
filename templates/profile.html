@@ -130,6 +130,9 @@
           <div class="vol-review-card" style="border-left: 3px solid #9B1C35;">
             <div class="vol-review-header">
               <span class="vol-review-host">{{ req['volunteer_name'] }}</span>
+              <span class="vol-review-rating" style="font-size:0.82rem;color:#555;">
+                {{ req['num_guests'] }} {% if req['num_guests'] == 1 %}гост{% else %}гости{% endif %}
+              </span>
               <span class="vol-review-date">
                 {{ req['from_date'] }}{% if req['to_date'] != req['from_date'] %} — {{ req['to_date'] }}{% endif %}
               </span>

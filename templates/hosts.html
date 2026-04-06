@@ -143,6 +143,14 @@
                           <label>От <input type="date" name="from_date" required></label>
                           <label>До <input type="date" name="to_date" required></label>
                         </div>
+                        <label style="font-size:0.8rem;color:#9B1C35;display:block;margin-bottom:0.4em;">
+                          Брой гости
+                          <select name="num_guests" style="font-size:0.82rem;border:1px solid rgba(155,28,53,0.3);border-radius:0.3em;padding:0.2em 0.4em;margin-left:0.4em;">
+                            {% for n in range(1, host['max_guests'] + 1) %}
+                            <option value="{{ n }}">{{ n }}{% if n == 1 %} (само аз){% endif %}</option>
+                            {% endfor %}
+                          </select>
+                        </label>
                         <textarea name="message" rows="2" placeholder="Кажи нещо за себе си (по желание)..."></textarea>
                         <div style="display:flex;gap:0.5em;margin-top:0.4em;">
                           <button type="submit" class="visit-btn" style="background:#A8C256;">Изпрати</button>
@@ -172,7 +180,7 @@
                   {% endif %}
                   <p><strong>Макс. гости:</strong> {{ host['max_guests'] }}</p>
                   <button type="button" class="cal-link-btn"
-                          onclick="openCalendarModal({{ host['id'] }}, '{{ host['name'] | e }}')">
+                          onclick="openCalendarModal({{ host['id'] }}, '{{ host['name'] | e }}', {{ host['max_guests'] }})">
                     📅 Виж графика
                   </button>
                   <p><a href="tel:{{ host['phone'] }}">📞 {{ host['phone'] }}</a></p>

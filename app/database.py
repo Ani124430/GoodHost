@@ -139,11 +139,13 @@ def init_db():
             from_date DATE NOT NULL,
             to_date DATE NOT NULL,
             message TEXT,
+            num_guests INTEGER NOT NULL DEFAULT 1,
             status TEXT NOT NULL DEFAULT 'pending',
             decline_reason TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    conn.execute("ALTER TABLE visit_requests ADD COLUMN IF NOT EXISTS num_guests INTEGER NOT NULL DEFAULT 1")
 
     conn.commit()
     conn.close()
