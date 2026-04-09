@@ -71,6 +71,18 @@
                 </div>
               </form>
             </div>
+            <div class="bio-box">
+              <span class="contact-label">Търся помощ с</span>
+              <span class="bio-text" id="help-display">{{ user['help_needed'] or '—' }}</span>
+              <button type="button" class="edit-bio-btn" id="edit-help-btn" onclick="openHelpEdit()">Редактирай</button>
+              <form id="help-form" action="/hosts/{{ user['id'] }}/update-help-needed" method="POST" style="display:none;">
+                <textarea name="help_needed" id="help-textarea" rows="3" placeholder="Напр. почистване, градинарство, грижа за животни...">{{ user['help_needed'] or '' }}</textarea>
+                <div class="bio-form-actions">
+                  <button type="submit" class="save-bio-btn">Запази</button>
+                  <button type="button" class="cancel-bio-btn" onclick="closeHelpEdit()">Откажи</button>
+                </div>
+              </form>
+            </div>
             {% endif %}
           </div>
         </div>
@@ -290,6 +302,17 @@
       document.getElementById('bio-display').style.display = '';
       document.querySelector('.edit-bio-btn').style.display = '';
       document.getElementById('bio-form').style.display = 'none';
+    }
+    function openHelpEdit() {
+      document.getElementById('help-display').style.display = 'none';
+      document.getElementById('edit-help-btn').style.display = 'none';
+      document.getElementById('help-form').style.display = 'block';
+      document.getElementById('help-textarea').focus();
+    }
+    function closeHelpEdit() {
+      document.getElementById('help-display').style.display = '';
+      document.getElementById('edit-help-btn').style.display = '';
+      document.getElementById('help-form').style.display = 'none';
     }
   </script>
 

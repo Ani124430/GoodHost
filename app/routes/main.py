@@ -961,6 +961,20 @@ def update_bio(host_id):
     return redirect(url_for('main.profile'))
 
 
+@main_bp.route('/hosts/<int:host_id>/update-help-needed', methods=['POST'])
+def update_help_needed(host_id):
+    if 'user_id' not in session or session.get('user_type') != 'host' or session['user_id'] != host_id:
+        return redirect(url_for('main.profile'))
+
+    help_needed = request.form.get('help_needed', '').strip()
+    db = get_db()
+    db.execute('UPDATE hosts SET help_needed = ? WHERE id = ?', (help_needed or None, host_id))
+    db.commit()
+    db.close()
+    flash('Полето "Търся помощ с" беше обновено успешно.', 'success')
+    return redirect(url_for('main.profile'))
+
+
 @main_bp.route('/volunteers/<int:volunteer_id>/delete', methods=['POST'])
 def delete_volunteer(volunteer_id):
     if 'user_id' not in session or session.get('user_type') != 'volunteer':
