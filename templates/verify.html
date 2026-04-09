@@ -5,32 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Потвърди самоличността си - GoodHost</title>
   <link rel="stylesheet" href="/static/css/hostsregistration.css"/>
-  <style>
-    .verify-box {
-      max-width: 500px;
-      margin: 60px auto;
-      text-align: center;
-      padding: 2rem;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.1);
-    }
-    .verify-box h1 { margin-bottom: 1rem; color: #2e7d32; }
-    .verify-box p  { color: #555; margin-bottom: 2rem; line-height: 1.6; }
-    #verify-btn {
-      background: #2e7d32;
-      color: white;
-      border: none;
-      padding: 0.8rem 2rem;
-      font-size: 1rem;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    #verify-btn:hover { background: #1b5e20; }
-    #verify-btn:disabled { background: #aaa; cursor: not-allowed; }
-    #status-msg { margin-top: 1.5rem; font-weight: bold; }
-    .skip-link { display: block; margin-top: 1rem; color: #888; font-size: 0.9rem; }
-  </style>
+  <link rel="stylesheet" href="/static/css/verify.css"/>
   <link rel="stylesheet" href="/static/css/chatbot.css"/>
 </head>
 <body>
@@ -70,95 +45,15 @@
 
   <script src="https://js.stripe.com/v3/"></script>
   <script>
-    const stripe     = Stripe("{{ stripe_publishable_key }}");
-    const userType   = "{{ user_type }}";
-    const userId     = "{{ user_id }}";
+    const stripePublishableKey = "{{ stripe_publishable_key }}";
+    const userType = "{{ user_type }}";
+    const userId = "{{ user_id }}";
     const redirectAfterVerify = "{{ '/profile' if is_logged_in else '/login' }}";
-    const btn        = document.getElementById('verify-btn');
-    const statusMsg  = document.getElementById('status-msg');
-
-    btn.addEventListener('click', async () => {
-      btn.disabled = true;
-      btn.textContent = 'Зареждане...';
-      statusMsg.textContent = '';
-
-      try {
-        const res = await fetch('/verify/start', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_type: userType, user_id: parseInt(userId) })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || 'Грешка при стартиране на верификацията.');
-        }
-
-        const { error } = await stripe.verifyIdentity(data.client_secret);
-
-        if (error) {
-          statusMsg.style.color = '#9B1C35';
-          statusMsg.textContent = 'Верификацията беше отменена или неуспешна.';
-          btn.disabled = false;
-          btn.textContent = 'Опитай отново';
-        } else {
-          statusMsg.style.color = '#2e7d32';
-          statusMsg.textContent = 'Верификацията се обработва...';
-
-          // Poll until Stripe marks the session as verified (max ~30s)
-          let attempts = 0;
-          const maxAttempts = 15;
-          const pollInterval = setInterval(async () => {
-            attempts++;
-            try {
-              const statusRes = await fetch(
-                `/verify/status?user_type=${userType}&user_id=${userId}`
-              );
-              const statusData = await statusRes.json();
-              console.log(`[verify poll #${attempts}]`, statusData);
-              if (statusData.verified) {
-                clearInterval(pollInterval);
-                statusMsg.textContent = 'Верификацията е успешна! Пренасочване...';
-                setTimeout(() => { window.location.href = redirectAfterVerify; }, 1000);
-              } else if (attempts >= maxAttempts) {
-                clearInterval(pollInterval);
-                statusMsg.textContent = 'Верификацията се обработва. Ще бъдеш пренасочен...';
-                setTimeout(() => { window.location.href = redirectAfterVerify; }, 1500);
-              }
-            } catch (e) {
-              if (attempts >= maxAttempts) {
-                clearInterval(pollInterval);
-                window.location.href = redirectAfterVerify;
-              }
-            }
-          }, 2000);
-        }
-
-      } catch (err) {
-        statusMsg.style.color = '#9B1C35';
-        statusMsg.textContent = err.message;
-        btn.disabled = false;
-        btn.textContent = 'Опитай отново';
-      }
-    });
   </script>
+  <script src="/static/js/verify.js"></script>
   <script src="/static/js/nav.js"></script>
 
 
-  <!-- Chatbot widget -->
-  <button id="chatbot-btn" aria-label="Chat">&#128172;</button>
-  <div id="chatbot-window">
-    <div id="chatbot-header">
-      <div>GoodHost &#1040;&#1089;&#1080;&#1089;&#1090;&#1077;&#1085;&#1090;<br><span>&#1055;&#1080;&#1090;&#1072;&#1081; &#1084;&#1077; &#1085;&#1077;&#1097;&#1086;!</span></div>
-      <button id="chatbot-close">&#10005;</button>
-    </div>
-    <div id="chatbot-messages"></div>
-    <form id="chatbot-form">
-      <textarea id="chatbot-input" placeholder="&#1053;&#1072;&#1087;&#1080;&#1096;&#1080; &#1089;&#1098;&#1086;&#1073;&#1097;&#1077;&#1085;&#1080;&#1077;..." rows="1"></textarea>
-      <button id="chatbot-send" type="submit">&#10148;</button>
-    </form>
-  </div>
-  <script src="/static/js/chatbot.js"></script>
+  {% include 'partials/chatbot.html' %}
 </body>
 </html>

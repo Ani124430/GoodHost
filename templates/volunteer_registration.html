@@ -9,30 +9,7 @@
 </head>
 <body>
 
-  <header>
-    <div class="logo">
-      <img src="/static/iconpicture.png" alt="GoodHost лого" style="height:45px; width:auto;"/>
-      <span>GoodHost</span>
-    </div>
-    <button class="nav-toggle" onclick="toggleNav()" aria-label="Меню">&#9776;</button>
-    <nav>
-      <a href="/">Начало</a>
-      <a href="/registration">Регистрация</a>
-      <a href="/hosts">Домакини</a>
-      <a href="/rules">Правила</a>
-      {% if is_logged_in %}
-        <div class="user-menu">
-          <span class="user-menu-name">{{ current_user_name }}</span>
-          <div class="user-dropdown">
-            <a href="/profile">Моя профил</a>
-            <a href="/logout">Изход</a>
-          </div>
-        </div>
-      {% else %}
-        <a href="/login"><button>Вход</button></a>
-      {% endif %}
-    </nav>
-  </header>
+  {% include 'partials/navbar.html' %}
 
   <main>
     <h1>Регистрация на доброволец</h1>
@@ -77,31 +54,11 @@
     <p>Искаш да станеш домакин? <a href="/hostsregistration">Регистрирай се тук</a></p>
   </main>
 
-  <footer>
-    <p>© 2026 GoodHost. Всички права запазени.</p>
-    <p>Контакти: <a href="mailto:goodhost230@gmail.com">goodhost230@gmail.com</a></p>
-    <div>
-      <a href="https://www.facebook.com/profile.php?id=61576516620688" target="_blank">Facebook</a>
-      <a href="https://www.instagram.com/goodhost12/?hl=bg" target="_blank" >Instagram</a>
-    </div>
-  </footer>
+  {% include 'partials/footer.html' %}
 
   <script src="/static/js/form-validation.js"></script>
   <script src="/static/js/nav.js"></script>
 
-  <!-- Chatbot widget -->
-  <button id="chatbot-btn" aria-label="Chat">&#128172;</button>
-  <div id="chatbot-window">
-    <div id="chatbot-header">
-      <div>GoodHost &#1040;&#1089;&#1080;&#1089;&#1090;&#1077;&#1085;&#1090;<br><span>&#1055;&#1080;&#1090;&#1072;&#1081; &#1084;&#1077; &#1085;&#1077;&#1097;&#1086;!</span></div>
-      <button id="chatbot-close">&#10005;</button>
-    </div>
-    <div id="chatbot-messages"></div>
-    <form id="chatbot-form">
-      <textarea id="chatbot-input" placeholder="&#1053;&#1072;&#1087;&#1080;&#1096;&#1080; &#1089;&#1098;&#1086;&#1073;&#1097;&#1077;&#1085;&#1080;&#1077;..." rows="1"></textarea>
-      <button id="chatbot-send" type="submit">&#10148;</button>
-    </form>
-  </div>
-  <script src="/static/js/chatbot.js"></script>
+  {% include 'partials/chatbot.html' %}
 </body>
 </html>

@@ -1,0 +1,24 @@
+.verify-box {
+  max-width: 500px;
+  margin: 60px auto;
+  text-align: center;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.1);
+}
+.verify-box h1 { margin-bottom: 1rem; color: #2e7d32; }
+.verify-box p  { color: #555; margin-bottom: 2rem; line-height: 1.6; }
+#verify-btn {
+  background: #2e7d32;
+  color: white;
+  border: none;
+  padding: 0.8rem 2rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+#verify-btn:hover { background: #1b5e20; }
+#verify-btn:disabled { background: #aaa; cursor: not-allowed; }
+#status-msg { margin-top: 1.5rem; font-weight: bold; }
+.skip-link { display: block; margin-top: 1rem; color: #888; font-size: 0.9rem; }

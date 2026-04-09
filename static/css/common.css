@@ -1,0 +1,76 @@
+:root {
+  --red: #9B1C35;
+  --cream: #FBF3E4;
+  --green: #A8C256;
+}
+
+.logo img {
+  height: 45px;
+  width: auto;
+}
+
+.user-menu {
+  position: relative;
+}
+
+.user-menu-name {
+  color: var(--cream);
+  font-size: 1rem;
+  padding: 0.5em 1.25em;
+  background-color: var(--green);
+  border-radius: 1.875em;
+  cursor: pointer;
+  font-family: Georgia, serif;
+  display: inline-block;
+  user-select: none;
+}
+
+.user-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 0.5em);
+  right: 0;
+  background: #fff;
+  border-radius: 0.5em;
+  box-shadow: 0 0.25em 1em rgba(0, 0, 0, 0.18);
+  min-width: 10em;
+  z-index: 500;
+  overflow: hidden;
+}
+
+.user-menu:hover .user-dropdown,
+.user-menu.open .user-dropdown {
+  display: block;
+}
+
+.user-dropdown a {
+  display: block;
+  padding: 0.65em 1.1em;
+  color: var(--red);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-family: Georgia, serif;
+}
+
+.user-dropdown a + a {
+  border-top: 1px solid rgba(155, 28, 53, 0.1);
+}
+
+.user-dropdown a:hover {
+  background: var(--cream);
+  color: var(--red);
+}
+
+.required-mark {
+  color: red;
+}
+
+.is-hidden {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  .user-dropdown {
+    display: none !important;
+  }
+}

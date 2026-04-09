@@ -1,0 +1,23 @@
+  <header>
+    <div class="logo">
+      <img src="/static/iconpicture.png" alt="GoodHost лого" style="height:45px; width:auto;"/>
+      <span>GoodHost</span>
+    </div>
+    <button class="nav-toggle" onclick="toggleNav()" aria-label="Меню">&#9776;</button>
+    <nav>
+      <a href="/">Начало</a>
+      <a href="/hosts">Домакини</a>
+      <a href="/rules">Правила</a>
+      {% if is_logged_in %}
+        <div class="user-menu">
+          <span class="user-menu-name">{{ current_user_name }}</span>
+          <div class="user-dropdown">
+            <a href="/profile">Моя профил</a>
+            <a href="/logout">Изход</a>
+          </div>
+        </div>
+      {% else %}
+        <a href="/login"><button>Вход</button></a>
+      {% endif %}
+    </nav>
+  </header>
