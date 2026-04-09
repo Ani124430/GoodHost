@@ -359,7 +359,7 @@ def hostsregistration():
         password_hash = generate_password_hash(password, method='pbkdf2:sha256')
 
         photos = []
-        if 'photos' in request.files:
+        if 'photos' in request.files and config.CLOUDINARY_API_KEY:
             for f in request.files.getlist('photos')[:20]:
                 if f and f.filename and allowed_file(f.filename):
                     result = cloudinary.uploader.upload(f, folder='goodhost')
@@ -899,7 +899,7 @@ def add_photos(host_id):
     for f in request.files.getlist('photos'):
         if len(photos) >= 20:
             break
-        if f and f.filename and allowed_file(f.filename):
+        if f and f.filename and allowed_file(f.filename) and config.CLOUDINARY_API_KEY:
             result = cloudinary.uploader.upload(f, folder='goodhost')
             photos.append(result['secure_url'])
             added += 1
