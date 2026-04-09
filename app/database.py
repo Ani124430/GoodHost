@@ -121,6 +121,7 @@ def init_db():
     ''')
 
     conn.execute("ALTER TABLE hosts ADD COLUMN IF NOT EXISTS help_needed TEXT")
+    conn.execute("ALTER TABLE hosts ADD COLUMN IF NOT EXISTS offers TEXT")
 
     conn.execute('''
         CREATE TABLE IF NOT EXISTS host_busy_days (

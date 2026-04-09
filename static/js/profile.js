@@ -26,6 +26,17 @@ function closeHelpEdit() {
   document.getElementById('edit-help-btn').style.display = '';
   document.getElementById('help-form').style.display = 'none';
 }
+function openOffersEdit() {
+  document.getElementById('offers-display').style.display = 'none';
+  document.getElementById('edit-offers-btn').style.display = 'none';
+  document.getElementById('offers-form').style.display = 'block';
+  document.getElementById('offers-textarea').focus();
+}
+function closeOffersEdit() {
+  document.getElementById('offers-display').style.display = '';
+  document.getElementById('edit-offers-btn').style.display = '';
+  document.getElementById('offers-form').style.display = 'none';
+}
 
 document.querySelectorAll('.gallery-img').forEach(function(img) {
   img.addEventListener('click', function() {

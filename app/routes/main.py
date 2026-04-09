@@ -344,6 +344,7 @@ def hostsregistration():
         region           = request.form.get('region', '').strip()
         about            = request.form.get('about', '').strip()
         help_needed      = request.form.get('help_needed', '').strip()
+        offers           = request.form.get('offers', '').strip()
         password         = request.form.get('password', '')
         password_confirm = request.form.get('password_confirm', '')
 
@@ -369,9 +370,9 @@ def hostsregistration():
         db = get_db()
         try:
             cursor = db.execute(
-                '''INSERT INTO hosts (name, age, bio, email, phone, location, max_guests, password_hash, photos, help_needed)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                (name, int(age), about, email, phone, location, max_guests, password_hash, json.dumps(photos), help_needed or None)
+                '''INSERT INTO hosts (name, age, bio, email, phone, location, max_guests, password_hash, photos, help_needed, offers)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                (name, int(age), about, email, phone, location, max_guests, password_hash, json.dumps(photos), help_needed or None, offers or None)
             )
             host_id = cursor.lastrowid
             db.commit()
@@ -972,6 +973,20 @@ def update_help_needed(host_id):
     db.commit()
     db.close()
     flash('Полето "Търся помощ с" беше обновено успешно.', 'success')
+    return redirect(url_for('main.profile'))
+
+
+@main_bp.route('/hosts/<int:host_id>/update-offers', methods=['POST'])
+def update_offers(host_id):
+    if 'user_id' not in session or session.get('user_type') != 'host' or session['user_id'] != host_id:
+        return redirect(url_for('main.profile'))
+
+    offers = request.form.get('offers', '').strip()
+    db = get_db()
+    db.execute('UPDATE hosts SET offers = ? WHERE id = ?', (offers or None, host_id))
+    db.commit()
+    db.close()
+    flash('Полето "Предлагам" беше обновено успешно.', 'success')
     return redirect(url_for('main.profile'))
 
 

@@ -60,6 +60,18 @@
                 </div>
               </form>
             </div>
+            <div class="bio-box">
+              <span class="contact-label">Предлагам</span>
+              <span class="bio-text" id="offers-display">{{ user['offers'] or '—' }}</span>
+              <button type="button" class="edit-bio-btn" id="edit-offers-btn" onclick="openOffersEdit()">Редактирай</button>
+              <form id="offers-form" action="/hosts/{{ user['id'] }}/update-offers" method="POST" style="display:none;">
+                <textarea name="offers" id="offers-textarea" rows="3" placeholder="Напр. храна, стая, транспорт...">{{ user['offers'] or '' }}</textarea>
+                <div class="bio-form-actions">
+                  <button type="submit" class="save-bio-btn">Запази</button>
+                  <button type="button" class="cancel-bio-btn" onclick="closeOffersEdit()">Откажи</button>
+                </div>
+              </form>
+            </div>
             {% endif %}
           </div>
         </div>

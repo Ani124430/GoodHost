@@ -155,6 +155,9 @@
                   {% if host['help_needed'] %}
                     <p><strong>Търся помощ с:</strong> {{ host['help_needed'] }}</p>
                   {% endif %}
+                  {% if host['offers'] %}
+                    <p><strong>Предлагам:</strong> {{ host['offers'] }}</p>
+                  {% endif %}
                   <p><strong>Макс. гости:</strong> {{ host['max_guests'] }}</p>
                   <button type="button" class="cal-link-btn"
                           onclick="openCalendarModal({{ host['id'] }}, '{{ host['name'] | e }}', {{ host['max_guests'] }})">
